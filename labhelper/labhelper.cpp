@@ -3,6 +3,8 @@
   #define VC_EXTRALEAN
   #define NOMINMAX //          - Macros min(a,b) and max(a,b)
 #include <windows.h>
+#undef near
+#undef far
 #endif // WIN32
 
 #include <GL/glew.h>
@@ -320,6 +322,7 @@ namespace labhelper {
 		 */
 		glDebugMessageCallback((GLDEBUGPROC)handle_debug_message_, 0);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, true);
+		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, 0, true);
 
 		/* Enable synchronous debug output; this causes the callback to be called
 		 * immediately on error, usually in the actual gl-function where the error

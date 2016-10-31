@@ -9,7 +9,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>imgui_$(Configuration).lib;glu32.lib;opengl32.lib;glew32.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../external/SDL2-2.0.4/lib/x86/;../external/glew-2.0.0/lib/Release/Win32/;../external/imgui-1.49/lib/</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../external/SDL2-2.0.4/lib/x86/;../external/glew-2.0.0/lib/Release/Win32/;../external/imgui-1.49/lib/$(PlatformToolset)/</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

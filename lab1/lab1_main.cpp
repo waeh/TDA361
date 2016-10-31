@@ -1,7 +1,3 @@
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 #include <GL/glew.h>
 
 #include <string>
@@ -31,6 +27,9 @@ float g_clearColor[3] = { 0.2f, 0.2f, 0.8f };
 
 void initGL()
 {
+	//////////////////////////////////////////////////////////////////////////////
+	// Vertex positions
+	//////////////////////////////////////////////////////////////////////////////
 	// Define the positions for each of the three vertices of the triangle
 	const float positions[] = {
 		//	 X      Y     Z
@@ -38,7 +37,21 @@ void initGL()
 		-0.5f,  -0.5f, 1.0f,	// v1
 		0.5f,  -0.5f, 1.0f		// v2
 	};
+	// Create a handle for the position vertex buffer object
+	// See OpenGL Spec §2.9 Buffer Objects 
+	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=54
+	GLuint positionBuffer;
+	glGenBuffers(1, &positionBuffer);
+	// Set the newly created buffer as the current one
+	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+	// Send the vertex position data to the current buffer
+	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
 
+	//////////////////////////////////////////////////////////////////////////////
+	// Vertex colors
+	//
+	// TASK 4: Change these colors to something more fun. 
+	//////////////////////////////////////////////////////////////////////////////
 	// Define the colors for each of the three vertices of the triangle
 	const float colors[] = {
 		//  R     G		B
@@ -46,17 +59,6 @@ void initGL()
 		1.0f, 1.0f, 1.0f,		// White
 		1.0f, 1.0f, 1.0f		// White
 	};
-
-	// Create a handle for the position vertex buffer object
-	// See OpenGL Spec §2.9 Buffer Objects 
-	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=54
-	GLuint positionBuffer; 
-	glGenBuffers( 1, &positionBuffer );
-	// Set the newly created buffer as the current one
-	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );
-	// Send the vertex position data to the current buffer
-	glBufferData( GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW );
-
 	// Create a handle for the vertex color buffer
 	GLuint colorBuffer; 
 	glGenBuffers( 1, &colorBuffer );
@@ -65,13 +67,13 @@ void initGL()
 	// Send the vertex color data to the current buffer
 	glBufferData( GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW );
 
-	//******* Connect triangle data with the vertex array object *******
+	//////////////////////////////////////////////////////////////////////////////
+	// Create a vertex array object and connect the vertex buffer objects to it
 	//
-	// Connect the vertex buffer objects to the vertex array object
 	// See OpenGL Spec §2.10 
 	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=64
+	//////////////////////////////////////////////////////////////////////////////
 	glGenVertexArrays(1, &vertexArrayObject);
-
 	// Bind the vertex array object
 	// The following calls will affect this vertex array object.
 	glBindVertexArray(vertexArrayObject);
@@ -79,14 +81,18 @@ void initGL()
 	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );
 	// Attaches positionBuffer to vertexArrayObject, in the 0th attribute location
 	glVertexAttribPointer(0, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/ );	
-
 	// Makes colorBuffer the current array buffer for subsequent calls.
 	glBindBuffer( GL_ARRAY_BUFFER, colorBuffer );
 	// Attaches colorBuffer to vertexArrayObject, in the 1st attribute location
 	glVertexAttribPointer(1, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/ );
-
 	glEnableVertexAttribArray(0); // Enable the vertex position attribute
 	glEnableVertexAttribArray(1); // Enable the vertex color attribute 
+
+	//////////////////////////////////////////////////////////////////////////////
+	// TASK 5: Add two new triangles. First by creating another vertex array 
+	//		   object, and then by adding a triangle to an existing VAO. 
+	//////////////////////////////////////////////////////////////////////////////
+
 
 
 	///////////////////////////////////////////////////////////////////////////
@@ -168,7 +174,10 @@ void display(void)
 	SDL_GetWindowSize(g_window, &w, &h);
 	glViewport(0, 0, w, h);		// Set viewport
 
-	glClearColor(g_clearColor[0], g_clearColor[1], g_clearColor[2], 1.0);						// Set clear color
+	///////////////////////////////////////////////////////////////////////////
+	// TASK 1: Create a bug here to try the debugger.
+	///////////////////////////////////////////////////////////////////////////
+	glClearColor(g_clearColor[0], g_clearColor[1], g_clearColor[2], 1.0);	// Set clear color
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clears the color buffer and the z-buffer
 
 	// We disable backface culling for this tutorial, otherwise care must be taken with the winding order
@@ -195,7 +204,7 @@ void gui() {
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	// ----------------------------------------------------------
 
-	// Render te GUI.
+	// Render the GUI.
 	ImGui::Render();
 }
 
@@ -212,8 +221,11 @@ int main(int argc, char *argv[])
 		// First render our geometry.
 		display();
 
+		///////////////////////////////////////////////////////////////////////////
+		// TASK 2: Uncomment the call to gui below to show the GUI
+		///////////////////////////////////////////////////////////////////////////
 		// Then render overlay GUI.
-		//gui();
+		// gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);			

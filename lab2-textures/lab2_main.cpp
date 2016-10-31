@@ -1,7 +1,3 @@
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 
 #include <GL/glew.h>
 
@@ -38,18 +34,30 @@ GLuint		positionBuffer, colorBuffer, indexBuffer, vertexArrayObject;
 void initGL()
 {
 	///////////////////////////////////////////////////////////////////////////
-	// Create the floor quad
+	// Create the vertex array object
+	///////////////////////////////////////////////////////////////////////////
+	glGenVertexArrays(1, &vertexArrayObject);
+	glBindVertexArray(vertexArrayObject);
+
+	///////////////////////////////////////////////////////////////////////////
+	// Create the positions buffer object
 	///////////////////////////////////////////////////////////////////////////	
-	// Vertex positions
 	const float positions[] = {
 		// X Y Z
-		-10.0f,   -10.0f, -30.0f,    // v0
-		-10.0f,   -10.0f, -330.0f,   // v1
-		 10.0f,   -10.0f, -330.0f,   // v2
-		 10.0f,   -10.0f, -30.0f     // v3
+		-10.0f, -10.0f, -30.0f,    // v0
+		-10.0f, -10.0f, -330.0f,   // v1
+		10.0f, -10.0f, -330.0f,   // v2
+		10.0f, -10.0f, -30.0f     // v3
 	};
+	glGenBuffers(1, &positionBuffer);													// Create a handle for the vertex position buffer
+	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );									// Set the newly created buffer as the current one
+	glBufferData( GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW );		// Send the vetex position data to the current buffer
+	glVertexAttribPointer(0, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/);
+	glEnableVertexAttribArray(0);
 
-	// Vertex colors
+	///////////////////////////////////////////////////////////////////////////
+	// Create the colors buffer object
+	///////////////////////////////////////////////////////////////////////////	
 	const float colors[] = {
 		//  R     G		B
 		1.0f, 1.0f, 1.0f,		// White
@@ -57,43 +65,29 @@ void initGL()
 		0.5f, 0.5f, 0.8f,		// Lightblue
 		1.0f, 1.0f, 1.0f		// White
 	};
-
-	// >>> @task 1.1
-
-	const int indices[] = {
-		0,1,3, // Triangle 1
-		1,2,3  // Triangle 2
-	};
-
-	// Create the buffer objects
-	glGenBuffers( 1, &positionBuffer );															// Create a handle for the vertex position buffer
-	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );											// Set the newly created buffer as the current one
-	glBufferData( GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW );			// Send the vetex position data to the current buffer
-
-	glGenBuffers( 1, &colorBuffer );															// Create a handle for the vertex color buffer
+	glGenBuffers(1, &colorBuffer);														// Create a handle for the vertex color buffer
 	glBindBuffer( GL_ARRAY_BUFFER, colorBuffer );										// Set the newly created buffer as the current one
 	glBufferData( GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW );			// Send the color data to the current buffer
+	glVertexAttribPointer(1, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/);
+	glEnableVertexAttribArray(1);
 
-	// >>> @task 1.2
+	///////////////////////////////////////////////////////////////////////////
+	// >>> @task 1 : Create the texture coordinates.
+	//				 Create the texture coordinates' buffer object.
+	//				 Set up the attrib pointer.
+	//				 Enable the vertex attrib array.
+	///////////////////////////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////////////////////////
+	// Create the element array buffer object
+	///////////////////////////////////////////////////////////////////////////	
+	const int indices[] = {
+		0, 1, 3, // Triangle 1
+		1, 2, 3  // Triangle 2
+	};
 	glGenBuffers( 1, &indexBuffer );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, indexBuffer );										
 	glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW );			
-
-	// Create the vertex array object
-	glGenVertexArrays(1, &vertexArrayObject);
-	glBindVertexArray(vertexArrayObject);
-
-	glBindBuffer( GL_ARRAY_BUFFER, positionBuffer );	
-	glVertexAttribPointer(0, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/ );	
-	glBindBuffer( GL_ARRAY_BUFFER, colorBuffer );
-	glVertexAttribPointer(1, 3, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/ );
-	// >>> @task 1.4
-
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, indexBuffer );
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	// >>> @task 1.5
 
 
 	// The loadShaderProgram and linkShaderProgam functions are defined in glutil.cpp and 
@@ -105,8 +99,7 @@ void initGL()
 	//************************************
 	//			Load Texture
 	//************************************
-	// >>> @task 2.1
-
+	// >>> @task 2
 }
 
 void display(void)

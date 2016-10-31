@@ -1,7 +1,3 @@
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 
 #include <GL/glew.h>
 
@@ -60,7 +56,7 @@ void loadModels()
 	// Load models (both vertex buffers and textures). 
 	///////////////////////////////////////////////////////////////////////////
 	cityModel = loadModelFromOBJ("../scenes/city.obj");
-	carModel = loadModelFromOBJ("../scenes/sportsCar/sportsCar.obj");
+	carModel = loadModelFromOBJ("../scenes/car.obj");
 }
 
 void display(void)
