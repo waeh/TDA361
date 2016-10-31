@@ -1,4 +1,18 @@
-newmtl phong1SG
+newmtl city:lambert2SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd concrete.jpg
+Ni 1.00
+newmtl city:mat000
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd bricks.jpg
+Ni 1.00
+newmtl city:phong1SG
 illum 4
 Kd 0.50 0.50 0.50
 Ka 0.10 0.10 0.10
@@ -6,7 +20,7 @@ Tf 1.00 1.00 1.00
 Ni 1.00
 Ks 0.50 0.50 0.50
 Ns 18.00
-newmtl phong2SG
+newmtl city:phong2SG
 illum 4
 Kd 0.00 0.00 0.00
 Ka 0.10 0.10 0.10
@@ -15,3 +29,10 @@ map_Kd max_track_road.jpg
 Ni 1.00
 Ks 0.50 0.50 0.50
 Ns 18.00
+newmtl city:walls
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd roof.jpg
+Ni 1.00
