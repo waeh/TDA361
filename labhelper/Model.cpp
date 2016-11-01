@@ -79,6 +79,23 @@ namespace labhelper
 			if (data == nullptr) {
 				std::cout << "ERROR: loadModelFromOBJ(): Failed to load texture: " << filename << "\n";
 			}
+
+			// most images have data from upper left corner, 
+			// but glTexImage2D assumes data start from lower left corner
+			int lorow = 0;
+			int hirow = height - 1;
+			while (lorow < hirow) {
+				uint32_t * lorowdata = (uint32_t *)&data[4 * width * lorow];
+				uint32_t * hirowdata = (uint32_t *)&data[4 * width * hirow];
+				for (int col = 0; col < width; col++) {
+					uint32_t tmp = lorowdata[col];
+					lorowdata[col] = hirowdata[col];
+					hirowdata[col] = tmp;
+				}
+				lorow++;
+				hirow--;
+			}
+
 			glGenTextures(1, &gl_id);
 			glBindTexture(GL_TEXTURE_2D, gl_id);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);

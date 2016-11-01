@@ -19,8 +19,8 @@ using namespace labhelper;
 using std::min;
 using std::max;
 
-static int old_w = 512;
-static int old_h = 512;
+static int old_w = 1280;
+static int old_h = 720;
 
 struct PerspectiveParams
 {
@@ -31,7 +31,7 @@ struct PerspectiveParams
     float far;
 };
 
-static PerspectiveParams pp = {45.0f, 512, 512, 0.1f, 300.0f};
+static PerspectiveParams pp = {45.0f, 1280, 720, 0.1f, 300.0f};
 
 // The window we'll be rendering to
 SDL_Window* g_window = nullptr;
@@ -136,8 +136,8 @@ void gui() {
         if (ImGui::Button("Reset"))
         {
             pp.fov = 45.0f;
-            pp.w = 512;
-            pp.h = 512;
+            pp.w = 1280;
+            pp.h = 720;
             pp.near = 0.1f;
             pp.far = 300.0f;
         }

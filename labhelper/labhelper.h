@@ -74,7 +74,7 @@ namespace labhelper {
 	/**
 	* Initialize a window, an openGL context, and initiate async debug output.
 	*/
-	SDL_Window * init_window_SDL(std::string caption, int width = 512, int height = 512);
+	SDL_Window * init_window_SDL(std::string caption, int width = 1280, int height = 720);
 
 	/**
 	* Destroys that which have been initialized.

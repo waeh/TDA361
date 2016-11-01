@@ -18,9 +18,9 @@ SDL_Window* g_window = nullptr;
 #include <glm/gtx/transform.hpp>
 using namespace glm;
 
-static int mag = 1;
-static int mini = 5;
-static float anisotropy = 16.0f;
+int mag = 1;
+int mini = 5;
+float anisotropy = 16.0f;
 
 // The shaderProgram holds the vertexShader and fragmentShader
 GLuint shaderProgram;
