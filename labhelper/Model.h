@@ -5,21 +5,43 @@
 
 namespace labhelper
 {	
+	struct Texture {
+		bool valid = false;
+		uint32_t gl_id;
+		std::string filename;
+		int width, height;
+		uint8_t * data;
+		bool load(const std::string & filename, int nof_components);
+	};
+	//////////////////////////////////////////////////////////////////////////////
+	// This material class implements a subset of the suggested PBR extension
+	// to the OBJ/MTL format, explained at: 
+	// http://exocortex.com/blog/extending_wavefront_mtl_to_support_pbr
+	// NOTE: A material can have _either_ a (textured) roughness, or a good old
+	//       shininess value. We still use shininess for the Blinn mfd in the 
+	//       GL labs, but roughness for pathtracing. 
+	//////////////////////////////////////////////////////////////////////////////
 	struct Material
 	{
-		std::string m_name; 
-		glm::vec3 m_diffuse_reflectance; 
-		glm::vec3 m_specular_reflectance;
-		glm::vec3 m_ambient_reflectance;
-		struct { uint32_t diffuse, specular, ambient; } m_texture_id;
-		float m_shininess; 
-		glm::vec3 m_emission;
+		std::string m_name;
+		glm::vec3	m_color;
+		float		m_reflectivity;
+		float		m_shininess;
+		float		m_metalness; 
+		float		m_fresnel; 
+		float		m_emission; 
+		Texture m_color_texture;
+		Texture	m_reflectivity_texture;
+		Texture	m_shininess_texture;
+		Texture	m_metalness_texture;
+		Texture	m_fresnel_texture;
+		Texture	m_emission_texture;
 	};
 
 	struct Mesh
 	{
 		std::string m_name;
-		Material * m_material; 
+		uint32_t m_material_idx; 
 		// Where this Mesh's vertices start
 		uint32_t m_start_index; 
 		uint32_t m_number_of_vertices;
@@ -48,6 +70,7 @@ namespace labhelper
 	};
 
 	Model * loadModelFromOBJ(std::string filename);
+	void saveModelToOBJ(Model * model, std::string filename);
 	void freeModel(Model * model);
 	void render(const Model * model); 
 }

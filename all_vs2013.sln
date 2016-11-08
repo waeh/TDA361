@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_2", "lab2-textur
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_3", "lab3-camera\OpenGL_Lab3-vs2013.vcxproj", "{05EB57EB-1525-4DE7-B96F-D9A04A19D131}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_4", "lab4-cubemapping\OpenGL_Lab4-vs2013.vcxproj", "{1E879B64-E89C-4545-AACE-C3384BA0DEB6}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "labhelper", "labhelper\labhelper.vcxproj", "{99E6FD3F-0F3F-4D81-86C6-B674EC597BB4}"
 EndProject
 Global

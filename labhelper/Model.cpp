@@ -11,16 +11,47 @@
 
 namespace labhelper
 {
+	bool Texture::load(const std::string & _filename, int _components) {
+		filename = _filename;
+		valid = true; 
+		int components; 
+		data = stbi_load(filename.c_str(), &width, &height, &components, _components);
+		if (data == nullptr) {
+			std::cout << "ERROR: loadModelFromOBJ(): Failed to load texture: " << filename << "\n";
+			exit(1);
+		}
+		glGenTextures(1, &gl_id);
+		glBindTexture(GL_TEXTURE_2D, gl_id);
+		GLenum format, internal_format;
+		if (_components == 1) { format = GL_R;  internal_format = GL_R8; }
+		else if (_components == 3) { format = GL_RGB; internal_format = GL_SRGB; }
+		else if (_components == 4) { format = GL_RGBA;  internal_format = GL_SRGB_ALPHA; }
+		else {
+			std::cout << "Texture loading not implemented for this number of compenents.\n";
+			exit(1);
+		}
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
+		return true; 
+	}
+
 	///////////////////////////////////////////////////////////////////////////
 	// Destructor
 	///////////////////////////////////////////////////////////////////////////
 	Model::~Model()
 	{
-		// Clear all GPU memory used by the Model
 		for (auto & material : m_materials) {
-			if (material.m_texture_id.diffuse != -1) glDeleteTextures(1, &material.m_texture_id.diffuse);
-			if (material.m_texture_id.specular != -1) glDeleteTextures(1, &material.m_texture_id.specular);
-			if (material.m_texture_id.ambient != -1) glDeleteTextures(1, &material.m_texture_id.ambient);
+			if (material.m_color_texture.valid) glDeleteTextures(1, &material.m_color_texture.gl_id);
+			if (material.m_reflectivity_texture.valid) glDeleteTextures(1, &material.m_reflectivity_texture.gl_id);
+			if (material.m_shininess_texture.valid) glDeleteTextures(1, &material.m_shininess_texture.gl_id);
+			if (material.m_metalness_texture.valid) glDeleteTextures(1, &material.m_metalness_texture.gl_id);
+			if (material.m_fresnel_texture.valid) glDeleteTextures(1, &material.m_fresnel_texture.gl_id);
+			if (material.m_emission_texture.valid) glDeleteTextures(1, &material.m_emission_texture.gl_id);
 		}
 		glDeleteBuffers(1, &m_positions_bo);
 		glDeleteBuffers(1, &m_normals_bo);
@@ -73,61 +104,33 @@ namespace labhelper
 		///////////////////////////////////////////////////////////////////////
 		// Transform all materials into our datastructure
 		///////////////////////////////////////////////////////////////////////
-		auto loadTexture = [](const std::string & filename, uint32_t & gl_id) {
-			int width, height, components; 
-			uint8_t * data = stbi_load(filename.c_str(), &width, &height, &components, 4);
-			if (data == nullptr) {
-				std::cout << "ERROR: loadModelFromOBJ(): Failed to load texture: " << filename << "\n";
-			}
-
-			// most images have data from upper left corner, 
-			// but glTexImage2D assumes data start from lower left corner
-			int lorow = 0;
-			int hirow = height - 1;
-			while (lorow < hirow) {
-				uint32_t * lorowdata = (uint32_t *)&data[4 * width * lorow];
-				uint32_t * hirowdata = (uint32_t *)&data[4 * width * hirow];
-				for (int col = 0; col < width; col++) {
-					uint32_t tmp = lorowdata[col];
-					lorowdata[col] = hirowdata[col];
-					hirowdata[col] = tmp;
-				}
-				lorow++;
-				hirow--;
-			}
-
-			glGenTextures(1, &gl_id);
-			glBindTexture(GL_TEXTURE_2D, gl_id);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
-			stbi_image_free(data);
-		};
 		for (const auto & m : materials) {
 			Material material; 
 			material.m_name = m.name;
-			material.m_texture_id.diffuse = 0;
-			material.m_diffuse_reflectance = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
+			material.m_color = glm::vec3(m.diffuse[0], m.diffuse[1], m.diffuse[2]);
 			if (m.diffuse_texname != "") { 
-				loadTexture(directory + m.diffuse_texname, material.m_texture_id.diffuse);
+				material.m_color_texture.load(directory + m.diffuse_texname, 4);
 			}
-			material.m_texture_id.specular = 0;
-			material.m_specular_reflectance = glm::vec3(m.specular[0], m.specular[1], m.specular[2]);
+			material.m_reflectivity = m.specular[0];
 			if (m.specular_texname != "") {
-				loadTexture(directory + m.specular_texname, material.m_texture_id.specular);
+				material.m_reflectivity_texture.load(directory + m.specular_texname, 1);
 			}
-			material.m_texture_id.ambient = 0;
-			material.m_ambient_reflectance = glm::vec3(m.ambient[0], m.ambient[1], m.ambient[2]);
-			if (m.ambient_texname != "") {
-				loadTexture(directory + m.ambient_texname, material.m_texture_id.ambient);
+			material.m_metalness = m.metallic;
+			if (m.metallic_texname != "") {
+				material.m_metalness_texture.load(directory + m.metallic_texname, 1);
 			}
-			material.m_shininess = m.shininess;
-			material.m_emission = glm::vec3(m.emission[0], m.emission[1], m.emission[2]);
-
+			material.m_fresnel = m.sheen; 
+			if (m.sheen_texname != "") {
+				material.m_fresnel_texture.load(directory + m.sheen_texname, 1);
+			}
+			material.m_shininess = m.roughness;
+			if (m.roughness_texname != "") {
+				material.m_fresnel_texture.load(directory + m.sheen_texname, 1);
+			}
+			material.m_emission = m.emission[0];
+			if (m.emissive_texname != "") {
+				material.m_emission_texture.load(directory + m.emissive_texname, 1);
+			}
 			model->m_materials.push_back(material);
 		}
 
@@ -192,10 +195,10 @@ namespace labhelper
 			// The shapes in an OBJ file may several different materials. 
 			// If so, we will split the shape into one Mesh per Material
 			///////////////////////////////////////////////////////////////////
-			int number_of_materials_in_shape = 1; 
 			int next_material_index = shape.mesh.material_ids[0];
 			int next_material_starting_face = 0;
 			std::vector<bool> finished_materials(materials.size(), false);
+			int number_of_materials_in_shape = 0;
 			while (next_material_index != -1)
 			{
 				int current_material_index = next_material_index; 
@@ -205,8 +208,9 @@ namespace labhelper
 				// Process a new Mesh with a unique material
 				Mesh mesh;
 				mesh.m_name = shape.name + "_" + materials[current_material_index].name; 
-				mesh.m_material = &model->m_materials[current_material_index];
+				mesh.m_material_idx = current_material_index;
 				mesh.m_start_index = vertices_so_far;
+				number_of_materials_in_shape += 1; 
 
 				int number_of_faces = shape.mesh.indices.size() / 3;
 				for (int i = current_material_starting_face; i < number_of_faces; i++)
@@ -259,6 +263,9 @@ namespace labhelper
 				model->m_meshes.push_back(mesh);
 				finished_materials[current_material_index] = true; 
 			}
+			if (number_of_materials_in_shape == 1) {
+				model->m_meshes.back().m_name = shape.name; 
+			}
 		}
 
 		///////////////////////////////////////////////////////////////////////
@@ -289,6 +296,109 @@ namespace labhelper
 		return model; 
 	}
 
+	void saveModelToOBJ(Model * model, std::string path)
+	{
+		///////////////////////////////////////////////////////////////////////
+		// Separate filename into directory, base filename and extension
+		// NOTE: This can be made a LOT simpler as soon as compilers properly 
+		//		 support std::filesystem (C++17)
+		///////////////////////////////////////////////////////////////////////
+		size_t separator = path.find_last_of("\\/");
+		std::string filename, extension, directory;
+		if (separator != std::string::npos) {
+			filename = path.substr(separator + 1, path.size() - separator - 1);
+			directory = path.substr(0, separator + 1);
+		}
+		else {
+			filename = path;
+			directory = "./";
+		}
+		separator = filename.find_last_of(".");
+		if (separator == std::string::npos) {
+			std::cout << "Fatal: loadModelFromOBJ(): Expecting filename ending in '.obj'\n";
+			exit(1);
+		}
+		extension = filename.substr(separator, filename.size() - separator);
+		filename = filename.substr(0, separator);
+
+		///////////////////////////////////////////////////////////////////////
+		// Save Materials
+		///////////////////////////////////////////////////////////////////////
+		std::ofstream mat_file(directory + filename + ".mtl");
+		if (!mat_file.is_open()) {
+			std::cout << "Could not open file " << filename << " for writing.\n";
+			return; 
+		}
+		mat_file << "# Exported by Chalmers Graphics Group\n";
+		for (auto mat : model->m_materials)
+		{
+			mat_file << "newmtl " << mat.m_name << "\n";
+			mat_file << "Kd " << mat.m_color.x << " " << mat.m_color.y << " " << mat.m_color.z << "\n";
+			mat_file << "Ks " << mat.m_reflectivity << " " << mat.m_reflectivity << " " << mat.m_reflectivity << "\n";
+			mat_file << "Pm " << mat.m_metalness << "\n";
+			mat_file << "Ps " << mat.m_fresnel << "\n";
+			mat_file << "Pr " << mat.m_shininess << "\n";
+			mat_file << "Ke " << mat.m_emission << " " << mat.m_emission << " " << mat.m_emission << "\n";
+			if (mat.m_color_texture.valid)
+				mat_file << "map_Kd " << directory + mat.m_color_texture.filename << "\n";
+			if (mat.m_reflectivity_texture.valid)
+				mat_file << "map_Ks " << directory + mat.m_reflectivity_texture.filename << "\n";
+			if (mat.m_metalness_texture.valid)
+				mat_file << "map_Pm " << directory + mat.m_metalness_texture.filename << "\n";
+			if (mat.m_fresnel_texture.valid)
+				mat_file << "map_Ps " << directory + mat.m_fresnel_texture.filename << "\n";
+			if (mat.m_shininess_texture.valid)
+				mat_file << "map_Pr " << directory + mat.m_shininess_texture.filename << "\n";
+			if (mat.m_emission_texture.valid)
+				mat_file << "map_Ke " << directory + mat.m_emission_texture.filename << "\n";
+		}
+		mat_file.close(); 
+
+		///////////////////////////////////////////////////////////////////////
+		// Save geometry
+		///////////////////////////////////////////////////////////////////////
+		std::ofstream obj_file(directory + filename + ".obj");
+		if (!obj_file.is_open()) {
+			std::cout << "Could not open file " << filename << " for writing.\n";
+			return;
+		}
+		obj_file << "# Exported by Chalmers Graphics Group\n";
+		obj_file << "mtllib " << filename << ".mtl\n";
+		int vertex_counter = 1; 
+		for (auto mesh : model->m_meshes)
+		{
+			obj_file << "o " << mesh.m_name << "\n";
+			obj_file << "g " << mesh.m_name << "\n";
+			obj_file << "usemtl " << model->m_materials[mesh.m_material_idx].m_name << "\n";
+			for (uint32_t i = mesh.m_start_index; i < mesh.m_start_index + mesh.m_number_of_vertices; i++)
+			{
+				obj_file << "v " << model->m_positions[i].x << " "
+					<< model->m_positions[i].y << " "
+					<< model->m_positions[i].z << "\n";
+			}
+			for (uint32_t i = mesh.m_start_index; i < mesh.m_start_index + mesh.m_number_of_vertices; i++)
+			{
+				obj_file << "vn " << model->m_normals[i].x << " "
+					<< model->m_normals[i].y << " "
+					<< model->m_normals[i].z << "\n";
+			}
+			for (uint32_t i = mesh.m_start_index; i < mesh.m_start_index + mesh.m_number_of_vertices; i++)
+			{
+				obj_file << "vt " << model->m_texture_coordinates[i].x << " "
+					<< model->m_texture_coordinates[i].y << "\n";
+			}
+			int number_of_faces = mesh.m_number_of_vertices / 3; 
+			for (int i = 0; i < number_of_faces; i++)
+			{
+				obj_file << "f " 
+					<< vertex_counter << "/" << vertex_counter << "/" << vertex_counter << " "
+					<< vertex_counter + 1 << "/" << vertex_counter + 1 << "/" << vertex_counter + 1 << " "
+					<< vertex_counter + 2 << "/" << vertex_counter + 2 << "/" << vertex_counter + 2 << "\n";
+				vertex_counter += 3; 
+			}
+		}
+	}
+
 	///////////////////////////////////////////////////////////////////////
 	// Free model 
 	///////////////////////////////////////////////////////////////////////
@@ -304,23 +414,37 @@ namespace labhelper
 		glBindVertexArray(model->m_vaob);
 		for (auto & mesh : model->m_meshes)
 		{
-			bool has_diffuse_texture = mesh.m_material->m_texture_id.diffuse != 0;
-			bool has_specular_texture = mesh.m_material->m_texture_id.specular != 0;
-			bool has_ambient_texture = mesh.m_material->m_texture_id.ambient != 0;
-			if (has_diffuse_texture) glBindTextures(0, 1, &mesh.m_material->m_texture_id.diffuse);
-			if (has_specular_texture) glBindTextures(1, 1, &mesh.m_material->m_texture_id.specular);
-			if (has_ambient_texture) glBindTextures(2, 1, &mesh.m_material->m_texture_id.ambient);
+			const Material & material = model->m_materials[mesh.m_material_idx];
 
+			bool has_color_texture = material.m_color_texture.valid;
+			bool has_reflectivity_texture = material.m_reflectivity_texture.valid;
+			bool has_metalness_texture = material.m_metalness_texture.valid;
+			bool has_fresnel_texture = material.m_fresnel_texture.valid;
+			bool has_shininess_texture = material.m_shininess_texture.valid;
+			bool has_emission_texture = material.m_emission_texture.valid;
+			if (has_color_texture) glBindTextures(0, 1, &material.m_color_texture.gl_id);
+			if (has_reflectivity_texture) glBindTextures(1, 1, &material.m_reflectivity_texture.gl_id);
+			if (has_metalness_texture) glBindTextures(2, 1, &material.m_metalness_texture.gl_id);
+			if (has_fresnel_texture) glBindTextures(3, 1, &material.m_fresnel_texture.gl_id);
+			if (has_shininess_texture) glBindTextures(4, 1, &material.m_shininess_texture.gl_id);
+			if (has_emission_texture) glBindTextures(5, 1, &material.m_emission_texture.gl_id);
 			GLint current_program = 0;
 			glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
-			glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_diffuse_texture);
-			glUniform3fv(glGetUniformLocation(current_program, "material_diffuse_color"), 1, &mesh.m_material->m_diffuse_reflectance.x);
-			glUniform1i(glGetUniformLocation(current_program, "has_specular_texture"), has_specular_texture);
-			glUniform3fv(glGetUniformLocation(current_program, "material_specular_color"), 1, &mesh.m_material->m_specular_reflectance.x);
-			glUniform1i(glGetUniformLocation(current_program, "has_ambient_texture"), has_ambient_texture);
-			glUniform3fv(glGetUniformLocation(current_program, "material_ambient_color"), 1, &mesh.m_material->m_ambient_reflectance.x);
-			glUniform3fv(glGetUniformLocation(current_program, "material_emissive_color"), 1, &mesh.m_material->m_emission.x);
-			glUniform1f(glGetUniformLocation(current_program, "material_shininess"), mesh.m_material->m_shininess);
+			glUniform1i(glGetUniformLocation(current_program, "has_color_texture"), has_color_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_reflectivity_texture"), has_reflectivity_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_metalness_texture"), has_metalness_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_fresnel_texture"), has_fresnel_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_shininess_texture"), has_shininess_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_emission_texture"), has_emission_texture);
+			glUniform3fv(glGetUniformLocation(current_program, "material_color"), 1, &material.m_color.x);
+			glUniform3fv(glGetUniformLocation(current_program, "material_diffuse_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
+			glUniform3fv(glGetUniformLocation(current_program, "material_emissive_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
+			glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture);//FIXME: Compatibility with old shading model of lab3.
+			glUniform1fv(glGetUniformLocation(current_program, "material_reflectivity"), 1, &material.m_reflectivity);
+			glUniform1fv(glGetUniformLocation(current_program, "material_metalness"), 1, &material.m_metalness);
+			glUniform1fv(glGetUniformLocation(current_program, "material_fresnel"), 1, &material.m_fresnel);
+			glUniform1fv(glGetUniformLocation(current_program, "material_shininess"), 1, &material.m_shininess);
+			glUniform1fv(glGetUniformLocation(current_program, "material_emission"), 1, &material.m_emission);
 			glDrawArrays(GL_TRIANGLES, mesh.m_start_index, (GLsizei)mesh.m_number_of_vertices);
 		}
 	}
