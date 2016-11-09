@@ -56,6 +56,12 @@ namespace labhelper {
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
+
+		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 16);
+		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 16);
+		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 16);
+		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 16);
+
 		// Also request a depth buffer
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);

@@ -129,7 +129,7 @@ namespace labhelper
 			}
 			material.m_emission = m.emission[0];
 			if (m.emissive_texname != "") {
-				material.m_emission_texture.load(directory + m.emissive_texname, 1);
+				material.m_emission_texture.load(directory + m.emissive_texname, 4);
 			}
 			model->m_materials.push_back(material);
 		}
@@ -431,6 +431,7 @@ namespace labhelper
 			GLint current_program = 0;
 			glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
 			glUniform1i(glGetUniformLocation(current_program, "has_color_texture"), has_color_texture);
+			glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture ? 1 : 0); // FIXME
 			glUniform1i(glGetUniformLocation(current_program, "has_reflectivity_texture"), has_reflectivity_texture);
 			glUniform1i(glGetUniformLocation(current_program, "has_metalness_texture"), has_metalness_texture);
 			glUniform1i(glGetUniformLocation(current_program, "has_fresnel_texture"), has_fresnel_texture);
