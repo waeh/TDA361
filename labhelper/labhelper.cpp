@@ -34,6 +34,8 @@
 #include <imgui.h>
 #include "imgui_impl_sdl_gl3.h"
 
+//#define HDR_FRAMEBUFFER
+
 using std::vector; 
 
 namespace labhelper {
@@ -56,11 +58,12 @@ namespace labhelper {
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
-
+#ifdef HDR_FRAMEBUFFER
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 16);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 16);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 16);
 		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 16);
+#endif
 
 		// Also request a depth buffer
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
