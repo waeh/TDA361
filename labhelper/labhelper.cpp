@@ -337,7 +337,7 @@ namespace labhelper {
 		 */
 		glDebugMessageCallback((GLDEBUGPROC)handle_debug_message_, 0);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, true);
-		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, 0, true);
+		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, 0, false);
 
 		/* Enable synchronous debug output; this causes the callback to be called
 		 * immediately on error, usually in the actual gl-function where the error

@@ -137,6 +137,5 @@ namespace labhelper {
 	 * can be pretty handy.
 	 */
 	void debugDrawLine(const glm::mat4 &viewMatrix,	const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos);
-
-#endif // LAB_GL_UTILS_H
 }
+#endif // LAB_GL_UTILS_H

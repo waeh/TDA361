@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_4", "lab4-cubema
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_5", "lab5-rendertotexture\OpenGL_Lab5-vs2013.vcxproj", "{0CA582D4-0FF4-41B9-80DC-5CBA5C086DDD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenGL_Lab_6", "lab6-shadowmaps\OpenGL_Lab6-vs2013.vcxproj", "{E11652DE-4E11-40CB-9B11-193DBAE82E20}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "labhelper", "labhelper\labhelper.vcxproj", "{99E6FD3F-0F3F-4D81-86C6-B674EC597BB4}"
 EndProject
 Global
