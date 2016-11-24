@@ -30,6 +30,7 @@ namespace labhelper
 		float		m_metalness; 
 		float		m_fresnel; 
 		float		m_emission; 
+		float		m_transparency; 
 		Texture m_color_texture;
 		Texture	m_reflectivity_texture;
 		Texture	m_shininess_texture;
@@ -53,6 +54,8 @@ namespace labhelper
 		~Model(); 
 		// The name of the whole model
 		std::string m_name; 
+		// The filename of this model 
+		std::string m_filename;
 		// The materials 
 		std::vector<Material> m_materials; 
 		// A model will contain one or more "Meshes"
@@ -72,5 +75,5 @@ namespace labhelper
 	Model * loadModelFromOBJ(std::string filename);
 	void saveModelToOBJ(Model * model, std::string filename);
 	void freeModel(Model * model);
-	void render(const Model * model); 
+	void render(const Model * model, const bool submitMaterials = true); 
 }

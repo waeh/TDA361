@@ -137,5 +137,27 @@ namespace labhelper {
 	 * can be pretty handy.
 	 */
 	void debugDrawLine(const glm::mat4 &viewMatrix,	const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos);
+
+	/**
+	* Code for generating random, uniformly distributed floating point
+	* numbers in the interval [from, to].
+	*/
+	float uniform_randf(const float from, const float to);
+
+	/**
+	* Code for generating random, uniformly distributed floating point
+	* numbers in the interval [0, 1].
+	*/
+	float randf();
+
+	/**
+	* Generate uniform points on a disc
+	*/
+	void concentricSampleDisk(float *dx, float *dy);
+
+	/**
+	* Generate points with a cosine distribution on the hemisphere
+	*/
+	glm::vec3 cosineSampleHemisphere();
 }
 #endif // LAB_GL_UTILS_H

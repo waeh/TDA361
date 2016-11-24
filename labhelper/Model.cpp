@@ -82,6 +82,7 @@ namespace labhelper
 		}
 		extension = filename.substr(separator, filename.size() - separator);
 		filename = filename.substr(0, separator); 
+	
 		///////////////////////////////////////////////////////////////////////
 		// Parse the OBJ file using tinyobj
 		///////////////////////////////////////////////////////////////////////
@@ -100,6 +101,7 @@ namespace labhelper
 		if (!ret) { exit(1); }
 		Model * model = new Model;
 		model->m_name = filename;
+		model->m_filename = path; 
 
 		///////////////////////////////////////////////////////////////////////
 		// Transform all materials into our datastructure
@@ -131,6 +133,7 @@ namespace labhelper
 			if (m.emissive_texname != "") {
 				material.m_emission_texture.load(directory + m.emissive_texname, 4);
 			}
+			material.m_transparency = m.transmittance[0]; 
 			model->m_materials.push_back(material);
 		}
 
@@ -339,6 +342,7 @@ namespace labhelper
 			mat_file << "Ps " << mat.m_fresnel << "\n";
 			mat_file << "Pr " << mat.m_shininess << "\n";
 			mat_file << "Ke " << mat.m_emission << " " << mat.m_emission << " " << mat.m_emission << "\n";
+			mat_file << "Tf " << mat.m_transparency << " " << mat.m_transparency << " " << mat.m_transparency << "\n";
 			if (mat.m_color_texture.valid)
 				mat_file << "map_Kd " << directory + mat.m_color_texture.filename << "\n";
 			if (mat.m_reflectivity_texture.valid)
@@ -409,43 +413,45 @@ namespace labhelper
 	///////////////////////////////////////////////////////////////////////
 	// Loop through all Meshes in the Model and render them
 	///////////////////////////////////////////////////////////////////////
-	void render(const Model * model)
+	void render(const Model * model, const bool submitMaterials)
 	{
 		glBindVertexArray(model->m_vaob);
 		for (auto & mesh : model->m_meshes)
 		{
-			const Material & material = model->m_materials[mesh.m_material_idx];
+			if (submitMaterials) {
+				const Material & material = model->m_materials[mesh.m_material_idx];
 
-			bool has_color_texture = material.m_color_texture.valid;
-			bool has_reflectivity_texture = material.m_reflectivity_texture.valid;
-			bool has_metalness_texture = material.m_metalness_texture.valid;
-			bool has_fresnel_texture = material.m_fresnel_texture.valid;
-			bool has_shininess_texture = material.m_shininess_texture.valid;
-			bool has_emission_texture = material.m_emission_texture.valid;
-			if (has_color_texture) glBindTextures(0, 1, &material.m_color_texture.gl_id);
-			if (has_reflectivity_texture) glBindTextures(1, 1, &material.m_reflectivity_texture.gl_id);
-			if (has_metalness_texture) glBindTextures(2, 1, &material.m_metalness_texture.gl_id);
-			if (has_fresnel_texture) glBindTextures(3, 1, &material.m_fresnel_texture.gl_id);
-			if (has_shininess_texture) glBindTextures(4, 1, &material.m_shininess_texture.gl_id);
-			if (has_emission_texture) glBindTextures(5, 1, &material.m_emission_texture.gl_id);
-			GLint current_program = 0;
-			glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
-			glUniform1i(glGetUniformLocation(current_program, "has_color_texture"), has_color_texture);
-			glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture ? 1 : 0); // FIXME
-			glUniform1i(glGetUniformLocation(current_program, "has_reflectivity_texture"), has_reflectivity_texture);
-			glUniform1i(glGetUniformLocation(current_program, "has_metalness_texture"), has_metalness_texture);
-			glUniform1i(glGetUniformLocation(current_program, "has_fresnel_texture"), has_fresnel_texture);
-			glUniform1i(glGetUniformLocation(current_program, "has_shininess_texture"), has_shininess_texture);
-			glUniform1i(glGetUniformLocation(current_program, "has_emission_texture"), has_emission_texture);
-			glUniform3fv(glGetUniformLocation(current_program, "material_color"), 1, &material.m_color.x);
-			glUniform3fv(glGetUniformLocation(current_program, "material_diffuse_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
-			glUniform3fv(glGetUniformLocation(current_program, "material_emissive_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
-			glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture);//FIXME: Compatibility with old shading model of lab3.
-			glUniform1fv(glGetUniformLocation(current_program, "material_reflectivity"), 1, &material.m_reflectivity);
-			glUniform1fv(glGetUniformLocation(current_program, "material_metalness"), 1, &material.m_metalness);
-			glUniform1fv(glGetUniformLocation(current_program, "material_fresnel"), 1, &material.m_fresnel);
-			glUniform1fv(glGetUniformLocation(current_program, "material_shininess"), 1, &material.m_shininess);
-			glUniform1fv(glGetUniformLocation(current_program, "material_emission"), 1, &material.m_emission);
+				bool has_color_texture = material.m_color_texture.valid;
+				bool has_reflectivity_texture = material.m_reflectivity_texture.valid;
+				bool has_metalness_texture = material.m_metalness_texture.valid;
+				bool has_fresnel_texture = material.m_fresnel_texture.valid;
+				bool has_shininess_texture = material.m_shininess_texture.valid;
+				bool has_emission_texture = material.m_emission_texture.valid;
+				if (has_color_texture) glBindTextures(0, 1, &material.m_color_texture.gl_id);
+				if (has_reflectivity_texture) glBindTextures(1, 1, &material.m_reflectivity_texture.gl_id);
+				if (has_metalness_texture) glBindTextures(2, 1, &material.m_metalness_texture.gl_id);
+				if (has_fresnel_texture) glBindTextures(3, 1, &material.m_fresnel_texture.gl_id);
+				if (has_shininess_texture) glBindTextures(4, 1, &material.m_shininess_texture.gl_id);
+				if (has_emission_texture) glBindTextures(5, 1, &material.m_emission_texture.gl_id);
+				GLint current_program = 0;
+				glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
+				glUniform1i(glGetUniformLocation(current_program, "has_color_texture"), has_color_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture ? 1 : 0); // FIXME
+				glUniform1i(glGetUniformLocation(current_program, "has_reflectivity_texture"), has_reflectivity_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_metalness_texture"), has_metalness_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_fresnel_texture"), has_fresnel_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_shininess_texture"), has_shininess_texture);
+				glUniform1i(glGetUniformLocation(current_program, "has_emission_texture"), has_emission_texture);
+				glUniform3fv(glGetUniformLocation(current_program, "material_color"), 1, &material.m_color.x);
+				glUniform3fv(glGetUniformLocation(current_program, "material_diffuse_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
+				glUniform3fv(glGetUniformLocation(current_program, "material_emissive_color"), 1, &material.m_color.x); //FIXME: Compatibility with old shading model of lab3.
+				glUniform1i(glGetUniformLocation(current_program, "has_diffuse_texture"), has_color_texture);//FIXME: Compatibility with old shading model of lab3.
+				glUniform1fv(glGetUniformLocation(current_program, "material_reflectivity"), 1, &material.m_reflectivity);
+				glUniform1fv(glGetUniformLocation(current_program, "material_metalness"), 1, &material.m_metalness);
+				glUniform1fv(glGetUniformLocation(current_program, "material_fresnel"), 1, &material.m_fresnel);
+				glUniform1fv(glGetUniformLocation(current_program, "material_shininess"), 1, &material.m_shininess);
+				glUniform1fv(glGetUniformLocation(current_program, "material_emission"), 1, &material.m_emission);
+			}
 			glDrawArrays(GL_TRIANGLES, mesh.m_start_index, (GLsizei)mesh.m_number_of_vertices);
 		}
 	}
