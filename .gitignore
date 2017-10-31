@@ -1,37 +1,6 @@
-# Ignore some of the files that VS uses locally
-*.pdb
-*.vcxproj.user
-*.sdf
-*.suo
-*.opensdf
-*.ini
-
-# Ignore the build directories
-lab1/Debug/
-lab2-textures/Debug/
-lab3-camera/Debug/
-lab4-cubemapping/Debug/
-lab5-rendertotexture/Debug/
-lab6-shadowmaps/Debug/
-labhelper/Debug/
-project/Debug
-pathtracer/Debug
-lab1/Release/
-lab2-textures/Release/
-lab3-camera/Release/
-lab4-cubemapping/Release/
-lab5-rendertotexture/Release/
-lab6-shadowmaps/Release/
-labhelper/Release/
-project/Release
-pathtracer/Release
-external/imgui-1.49/Release
-
-# Ignore the exe files
-bin/*.exe
-bin/*.ilk
+# Ignore windows build files
+bin/
 
 # Linux ignores
 build/
-*/bin/
 .ycm_extra_conf.py*
