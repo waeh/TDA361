@@ -1,5 +1,5 @@
 # Ignore windows build files
-bin/
+/bin/
 
 # Linux ignores
 build/
