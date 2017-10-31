@@ -104,10 +104,10 @@ void initGL()
 	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
 	// Load text files for vertex and fragment shaders.
-	std::ifstream vs_file("simple.vert");
+	std::ifstream vs_file("../lab1/simple.vert");
 	std::string vs_src((std::istreambuf_iterator<char>(vs_file)), std::istreambuf_iterator<char>());
 
-	std::ifstream fs_file("simple.frag");
+	std::ifstream fs_file("../lab1/simple.frag");
 	std::string fs_src((std::istreambuf_iterator<char>(fs_file)), std::istreambuf_iterator<char>());
 
 	const char *vs = vs_src.c_str();

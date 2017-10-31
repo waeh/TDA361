@@ -99,9 +99,9 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	//		Load Shaders
 	///////////////////////////////////////////////////////////////////////
-	backgroundProgram = labhelper::loadShaderProgram("background.vert", "background.frag");
-	shaderProgram = labhelper::loadShaderProgram("shading.vert", "shading.frag");
-	simpleShaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	backgroundProgram   = labhelper::loadShaderProgram("../lab6-shadowmaps/background.vert", "../lab6-shadowmaps/background.frag");
+	shaderProgram       = labhelper::loadShaderProgram("../lab6-shadowmaps/shading.vert",    "../lab6-shadowmaps/shading.frag");
+	simpleShaderProgram = labhelper::loadShaderProgram("../lab6-shadowmaps/simple.vert",     "../lab6-shadowmaps/simple.frag");
 
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices

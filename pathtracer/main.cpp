@@ -52,7 +52,7 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	// Load shader program
 	///////////////////////////////////////////////////////////////////////////
-	shaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	shaderProgram = labhelper::loadShaderProgram("../pathtracer/simple.vert", "../pathtracer/simple.frag");
 
 	///////////////////////////////////////////////////////////////////////////
 	// Initial path-tracer settings
@@ -83,7 +83,7 @@ void initialize()
 	///////////////////////////////////////////////////////////////////////////
 	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/NewShip.obj"), translate(vec3(0.0f, 10.0f, 0.0f))));
 	models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/landingpad2.obj"), mat4(1.0f)));
-	//models.push_back(make_pair(labhelper::loadModelFromOBJ("../scenes/BigSphere.obj"), mat4(1.0f)));
+	//models.push_back(make_pair(labhelper::loadModelFromOBJ("scenes/BigSphere.obj"), mat4(1.0f)));
 
 	///////////////////////////////////////////////////////////////////////////
 	// Add models to pathtracer scene

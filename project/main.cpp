@@ -1,5 +1,9 @@
 
 
+#ifdef _WIN32
+extern "C" _declspec(dllexport) unsigned int NvOptimusEnablement = 0x00000001;
+#endif
+
 #include <GL/glew.h>
 #include <cmath>
 #include <cstdlib>
@@ -17,6 +21,7 @@ using namespace glm;
 #include <Model.h>
 #include "hdr.h"
 #include "fbo.h"
+
 
 
 
@@ -56,6 +61,9 @@ vec3 point_light_color = vec3(1.f, 1.f, 1.f);
 float point_light_intensity_multiplier = 10000.0f;
 
 
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Camera parameters.
 ///////////////////////////////////////////////////////////////////////////////
@@ -78,11 +86,11 @@ mat4 fighterModelMatrix;
 
 void loadShaders(bool is_reload)
 {
-	GLuint shader = labhelper::loadShaderProgram("simple.vert", "simple.frag", is_reload);
+	GLuint shader = labhelper::loadShaderProgram("../project/simple.vert", "../project/simple.frag", is_reload);
 	if (shader != 0) simpleShaderProgram = shader; 
-	shader = labhelper::loadShaderProgram("background.vert", "background.frag", is_reload);
+	shader = labhelper::loadShaderProgram("../project/background.vert", "../project/background.frag", is_reload);
 	if (shader != 0) backgroundProgram = shader;
-	shader = labhelper::loadShaderProgram("shading.vert", "shading.frag", is_reload);
+	shader = labhelper::loadShaderProgram("../project/shading.vert", "../project/shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
 }
 
@@ -91,16 +99,16 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	//		Load Shaders
 	///////////////////////////////////////////////////////////////////////
-	backgroundProgram = labhelper::loadShaderProgram("background.vert", "background.frag");
-	shaderProgram = labhelper::loadShaderProgram("shading.vert", "shading.frag");
-	simpleShaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	backgroundProgram   = labhelper::loadShaderProgram("../project/background.vert", "../project/background.frag");
+	shaderProgram       = labhelper::loadShaderProgram("../project/shading.vert",    "../project/shading.frag");
+	simpleShaderProgram = labhelper::loadShaderProgram("../project/simple.vert",     "../project/simple.frag");
 
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
-	fighterModel = labhelper::loadModelFromOBJ("../scenes/NewShip.obj");
+	fighterModel    = labhelper::loadModelFromOBJ("../scenes/NewShip.obj");
 	landingpadModel = labhelper::loadModelFromOBJ("../scenes/landingpad.obj");
-	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
+	sphereModel     = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
 	fighterModelMatrix = translate(15.0f * worldUp);
@@ -214,6 +222,8 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, reflectionMap);
 	glActiveTexture(GL_TEXTURE0);
 
+
+
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera
 	///////////////////////////////////////////////////////////////////////////
@@ -225,6 +235,7 @@ void display(void)
 	drawBackground(viewMatrix, projMatrix);
 	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
+
 
 
 }
@@ -240,9 +251,6 @@ bool handleEvents(void)
 		}
 		if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_g) {
 			showUI = !showUI;
-		}
-		if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_r) {
-			loadShaders(true);
 		}
 		if (event.type == SDL_MOUSEMOTION && !ImGui::IsMouseHoveringAnyWindow()) {
 			static int prev_xcoord = event.motion.x;

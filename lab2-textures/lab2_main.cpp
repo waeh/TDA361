@@ -92,7 +92,7 @@ void initGL()
 
 	// The loadShaderProgram and linkShaderProgam functions are defined in glutil.cpp and 
 	// do exactly what we did in lab1 but are hidden for convenience
-	shaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	shaderProgram = labhelper::loadShaderProgram("../lab2-textures/simple.vert", "../lab2-textures/simple.frag");
 
 	//**********************************************
 

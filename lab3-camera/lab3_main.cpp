@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 	g_window = labhelper::init_window_SDL("OpenGL Lab 3");
 
 	// Load shader program
-	shaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	shaderProgram = labhelper::loadShaderProgram("../lab3-camera/simple.vert", "../lab3-camera/simple.frag");
 
 	// Load models
 	loadModels();

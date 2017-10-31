@@ -53,10 +53,4 @@ make
 
 in the same directory.
 
-The executable for each lab is now located in a bin directory in the corresponding lab root e.g. lab1/bin 
-lab2-textures/bin etc.  
-*NOTE*: you need be in the root directory of each lab when executing the binary, otherwise the shaders will 
-not load correctly. For lab2 you will for example need to be in the directory lab2-textures/ and type
-``` shell
-bin/lab2
-```
+The executable for each lab is now located in the corresponding directory in the build folder e.g. lab2-textures/lab2. 

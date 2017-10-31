@@ -182,9 +182,9 @@ void initGL()
 	fighterModel = labhelper::loadModelFromOBJ("../scenes/NewShip.obj");
 
 	// load and set up default shader
-	backgroundProgram = labhelper::loadShaderProgram("shaders/background.vert", "shaders/background.frag");
-	shaderProgram = labhelper::loadShaderProgram("shaders/simple.vert", "shaders/simple.frag");
-	postFxShader = labhelper::loadShaderProgram("shaders/postFx.vert", "shaders/postFx.frag");
+	backgroundProgram = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/background.vert", "../lab5-rendertotexture/shaders/background.frag");
+	shaderProgram     = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/simple.vert",     "../lab5-rendertotexture/shaders/simple.frag");
+	postFxShader      = labhelper::loadShaderProgram("../lab5-rendertotexture/shaders/postFx.vert",     "../lab5-rendertotexture/shaders/postFx.frag");
 
 	///////////////////////////////////////////////////////////////////////////
 	// Load environment map

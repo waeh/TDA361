@@ -5,6 +5,8 @@
 #include <windows.h>
 #undef near
 #undef far
+#else
+#include <signal.h>
 #endif // WIN32
 
 #include <GL/glew.h>
@@ -50,12 +52,10 @@ namespace labhelper {
 		atexit(SDL_Quit);
 		SDL_GL_LoadLibrary(nullptr); // Default OpenGL is fine.
 
-		// Request an OpenGL 4.3 context (should be core)
+		// Request an OpenGL 4.1 context (should be core)
 		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
 #ifdef HDR_FRAMEBUFFER
@@ -304,7 +304,7 @@ namespace labhelper {
 #			if defined(_WIN32)
 				__debugbreak();
 #			else // !win32
-				assert(false);
+                raise(SIGTRAP);
 #			endif // ~ platform
 			}
 		}
@@ -347,6 +347,7 @@ namespace labhelper {
 		 * it might not be a good idea to unconditionally enable this. For the
 		 * labs, we just enable it, however.
 		 */
+		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
 		/* Debug output can be somewhat spammy, especially if all messages are
@@ -534,51 +535,51 @@ namespace labhelper {
 	{
 		glUniform3fv(glGetUniformLocation(shaderProgram, name), 1, &value.x);
 	}
+	void setUniformSlow(GLuint shaderProgram, const char *name, const uint32_t nof_values, const glm::vec3 * values)
+	{
+		glUniform3fv(glGetUniformLocation(shaderProgram, name), nof_values, (float *)values);
+	}
 
 	void debugDrawLine(const glm::mat4 &viewMatrix,
 		const glm::mat4 &projectionMatrix,
 		const glm::vec3 &worldSpaceLightPos)
 	{
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		GLint temp;
-		glColor3f(1.0, 1.0, 0.0);
-		glGetIntegerv(GL_CURRENT_PROGRAM, &temp);
-		glUseProgram(0);
-		glMatrixMode(GL_PROJECTION);
-		glLoadMatrixf(&projectionMatrix[0].x);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(&viewMatrix[0].x);
-		glEnable(GL_LINE_STIPPLE);
-		glLineStipple(1, 52428);
-		glBegin(GL_LINES);
-		glVertex3fv(&worldSpaceLightPos.x);
-		glVertex3f(0.0f, 0.0f, 0.0f);
-		glEnd();
-		glUseProgram(temp);
-		glPopAttrib();
+		static GLuint vertexArrayObject = 0;
+		static int nofVertices = 2;
+		// do this initialization first time the function is called... 
+		if (vertexArrayObject == 0)
+		{
+			glGenVertexArrays(1, &vertexArrayObject);
+			static const glm::vec3 positions[] = {
+				{ worldSpaceLightPos.x, worldSpaceLightPos.y, worldSpaceLightPos.z },
+				{ 0.0f, 0.0f, 0.0f }
+			};
+			labhelper::createAddAttribBuffer(vertexArrayObject, positions, sizeof(positions), 0, 3, GL_FLOAT);
+		}
+		glBindVertexArray(vertexArrayObject);
+		glDrawArrays(GL_LINES, 0, nofVertices);
 	}
 
 	void drawFullScreenQuad()
 	{
-		glPushAttrib(GL_DEPTH_BUFFER_BIT);
+		GLboolean previous_depth_state; 
+		glGetBooleanv(GL_DEPTH_TEST, &previous_depth_state);
 		glDisable(GL_DEPTH_TEST);
 		static GLuint vertexArrayObject = 0;
-		static int nofVertices = 4;
-		// do this initialization first time the function is called... somewhat dodgy, but works for demonstration purposes
+		static int nofVertices = 6;
+		// do this initialization first time the function is called... 
 		if (vertexArrayObject == 0)
 		{
 			glGenVertexArrays(1, &vertexArrayObject);
 			static const glm::vec2 positions[] = {
-				{ -1.0f, -1.0f },
-				{ 1.0f, -1.0f },
-				{ 1.0f, 1.0f },
-				{ -1.0f, 1.0f },
+				{ -1.0f, -1.0f }, { 1.0f, -1.0f }, { 1.0f, 1.0f },
+				{ -1.0f, -1.0f }, { 1.0f, 1.0f }, {-1.0f, 1.0f}
 			};
 			labhelper::createAddAttribBuffer(vertexArrayObject, positions, sizeof(positions), 0, 2, GL_FLOAT);
 		}
 		glBindVertexArray(vertexArrayObject);
-		glDrawArrays(GL_QUADS, 0, nofVertices);
-		glPopAttrib(); 
+		glDrawArrays(GL_TRIANGLES, 0, nofVertices);
+		if (previous_depth_state) glEnable(GL_DEPTH_TEST);
 	}
 
     float uniform_randf(const float from, const float to) {

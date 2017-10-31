@@ -53,7 +53,7 @@ vec3 worldUp(0.0f, 1.0f, 0.0f);
 // Models
 ///////////////////////////////////////////////////////////////////////////////
 const std::string model_filename = "../scenes/NewShip.obj";
-//const std::string model_filename = "../scenes/sphere.obj";
+//const std::string model_filename = "scenes/sphere.obj";
 labhelper::Model *fighterModel = nullptr;
 labhelper::Model *sphereModel = nullptr;
 
@@ -63,9 +63,9 @@ labhelper::Model *sphereModel = nullptr;
 ///////////////////////////////////////////////////////////////////////////////
 void loadShaders(bool is_reload)
 {
-	GLuint shader = labhelper::loadShaderProgram("simple.vert", "simple.frag", is_reload);
+	GLuint shader = labhelper::loadShaderProgram("../lab4-cubemapping/simple.vert", "../lab4-cubemapping/simple.frag", is_reload);
 	if (shader != 0) shaderProgram = shader; 
-	shader = labhelper::loadShaderProgram("background.vert", "background.frag", is_reload);
+	shader = labhelper::loadShaderProgram("../lab4-cubemapping/background.vert", "../lab4-cubemapping/background.frag", is_reload);
 	if (shader != 0) backgroundProgram = shader;
 }
 

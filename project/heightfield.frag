@@ -15,6 +15,6 @@ layout(location = 0) out vec4 fragmentColor;
 void main() 
 {
 	//fragmentColor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);
-	fragmentColor = vec4(1, 1, 1, 1);
-	//fragmentColor = vec4(material_color, 1.0);
+	//fragmentColor = vec4(1, 1, 1, 1);
+	fragmentColor = vec4(material_color, 1.0);
 }
