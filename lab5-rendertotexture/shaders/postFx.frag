@@ -47,7 +47,11 @@ vec3 grayscale(vec3 rgbSample);
  */
 vec3 toSepiaTone(vec3 rgbSample);
 
-
+vec3 mosaic(vec2 coord)
+{
+	vec3 result = vec3(0.0);
+	return textureRect(frameBufferTexture, vec2(coord.x-mod(coord.x,32),coord.y-mod(coord.y,32))).xyz;
+}
 
 void main()
 {
@@ -73,7 +77,7 @@ void main()
 		fragmentColor = vec4(toSepiaTone(blur(mushrooms(gl_FragCoord.xy))), 1.0);
 		break;
 	case 6:
-		fragmentColor = vec4(0.0); // place holder
+		fragmentColor = vec4(mosaic(gl_FragCoord.xy), 1.0);; // place holder
 		break;
 	case 7:
 		fragmentColor = vec4(0.0); // place holder

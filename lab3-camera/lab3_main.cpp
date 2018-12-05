@@ -43,6 +43,7 @@ float currentTime = 0.0f;
 // Models
 Model *cityModel = nullptr, *carModel = nullptr;
 mat4 carModelMatrix(1.0f);
+mat4 carModelMatrix2(1.0f);
 
 vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
 
@@ -86,14 +87,21 @@ void display(void)
 	// Set up model matrices
 	mat4 cityModelMatrix(1.0f);
 
+	// use camera direction as -z axis and compute the x (cameraRight) and y (cameraUp) base vectors
+	vec3 cameraRight = normalize(cross(cameraDirection, worldUp));
+	vec3 cameraUp = normalize(cross(cameraRight, cameraDirection));
+
+	mat3 cameraBaseVectorsWorldSpace(cameraRight, cameraUp, -cameraDirection);
+
+	mat4 cameraRotation = mat4(transpose(cameraBaseVectorsWorldSpace));
+
+
 	// Set up the view matrix
 	// The view matrix defines where the viewer is looking
 	// Initially fixed, but will be replaced in the tutorial.
-	mat4 constantViewMatrix =  mat4(0.707106769f, -0.408248276f, 1.00000000f, 0.000000000f,
-		0.000000000f, 0.816496551f, 1.00000000f, 0.000000000f,
-		-0.707106769f, -0.408248276f, 1.00000000f, 0.000000000f,
-		0.000000000f, 0.000000000f, -30.0000000f, 1.00000000f);
+	mat4 constantViewMatrix = cameraRotation * translate(-cameraPosition);
 	mat4 viewMatrix = constantViewMatrix;
+	mat4 viewMatrix2 = constantViewMatrix;
 
 	// Setup the projection matrix
         if (w != old_w || h != old_h)
@@ -104,6 +112,7 @@ void display(void)
             old_h = h;
         }
 	mat4 projectionMatrix = perspective(radians(pp.fov), float(pp.w) / float(pp.h), pp.near, pp.far);
+	mat4 projectionMatrix2 = perspective(radians(pp.fov), float(pp.w) / float(pp.h), pp.near, pp.far);
 	
 	// Concatenate the three matrices and pass the final transform to the vertex shader
 	
@@ -114,7 +123,12 @@ void display(void)
 	render(cityModel);
 
 	// car
-	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix;
+	modelViewProjectionMatrix = projectionMatrix2 * viewMatrix2 * carModelMatrix;
+	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
+	render(carModel);
+
+	// Second car
+	modelViewProjectionMatrix = projectionMatrix * viewMatrix * carModelMatrix2;
 	glUniformMatrix4fv(loc, 1, false, &modelViewProjectionMatrix[0].x);
 	render(carModel);
 
@@ -172,7 +186,7 @@ int main(int argc, char *argv[])
 		display();
 
                 // Render overlay GUI.
-                //gui();
+                gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
@@ -195,29 +209,60 @@ int main(int argc, char *argv[])
 				int delta_x = event.motion.x - prev_xcoord;
 				int delta_y = event.motion.y - prev_ycoord;
 				if (event.button.button & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-					printf("Mouse motion while left button down (%i, %i)\n", event.motion.x, event.motion.y);
+					float rotationSpeed = 0.005f;
+					mat4 yaw = rotate(rotationSpeed * -delta_x, worldUp);
+					mat4 pitch = rotate(rotationSpeed * -delta_y, normalize(cross(cameraDirection, worldUp)));
+					cameraDirection = vec3(pitch * yaw * vec4(cameraDirection, 0.0f));
 				}
 				prev_xcoord = event.motion.x;
 				prev_ycoord = event.motion.y;
 			}
 		}
 
+
+
+
 		// check keyboard state (which keys are still pressed)
 		const uint8_t *state = SDL_GetKeyboardState(nullptr);
 
-		// implement camera controls based on key states
+		// implement controls based on key states
+		float speed = 0.3f;
+		static mat4 T(1.0f), R(1.0f);
 		if (state[SDL_SCANCODE_UP]) {
-			printf("Key Up is pressed down\n");
+			T[3] += speed * R[2];
 		}
 		if (state[SDL_SCANCODE_DOWN]) {
-			printf("Key Down is pressed down\n");
+			T[3] -= speed * R[2];
 		}
 		if (state[SDL_SCANCODE_LEFT]) {
-			printf("Key Left is pressed down\n");
+			R[0] -= 0.03f * R[2];
 		}
 		if (state[SDL_SCANCODE_RIGHT]) {
-			printf("Key Right is pressed down\n");
+			R[0] += 0.03f * R[2];
 		}
+		if (state[SDL_SCANCODE_W]) {
+			cameraPosition[2] -= 0.03f;
+		}
+		if (state[SDL_SCANCODE_S]) {
+			cameraPosition[2] += 0.03f;
+		}
+		if (state[SDL_SCANCODE_A]) {
+			cameraPosition[0] -= 0.03f;
+		}
+		if (state[SDL_SCANCODE_D]) {
+			cameraPosition[0] += 0.03f;
+		}
+
+		// Make R orthonormal again
+		R[0] = normalize(R[0]);
+		R[2] = vec4(cross(vec3(R[0]), vec3(R[1])), 0.0f);
+
+		carModelMatrix = T * R;
+
+		// Move car2 in circles
+		mat4 trans = translate(vec3(10.0f, 0.0f, 0.0f));
+		mat4 rot = rotate(-currentTime, vec3(0.0f, 1.0f, 0.0f));
+		carModelMatrix2 = rot * trans;
 	}
 
 	// Shut down everything. This includes the window and all other subsystems.

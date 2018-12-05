@@ -27,6 +27,7 @@ float g_clearColor[3] = { 0.2f, 0.2f, 0.8f };
 
 void initGL()
 {
+	
 	//////////////////////////////////////////////////////////////////////////////
 	// Vertex positions
 	//////////////////////////////////////////////////////////////////////////////
@@ -37,6 +38,15 @@ void initGL()
 		-0.5f,  -0.5f, 1.0f,	// v1
 		0.5f,  -0.5f, 1.0f		// v2
 	};
+
+	//Task 5 - creating more triangles
+	float sndpos[] = {
+		//	 X      Y     Z
+		0.1f,   0.6f, 1.0f,		// v0
+		-0.5f,  0.7f, 1.0f,		// v1
+		0.5f,   0.8f, 1.0f		// v2
+	};
+
 	// Create a handle for the position vertex buffer object
 	// See OpenGL Spec §2.9 Buffer Objects 
 	// - http://www.cse.chalmers.se/edu/course/TDA361/glspec30.20080923.pdf#page=54
@@ -47,6 +57,7 @@ void initGL()
 	// Send the vertex position data to the current buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
 
+
 	//////////////////////////////////////////////////////////////////////////////
 	// Vertex colors
 	//
@@ -55,9 +66,9 @@ void initGL()
 	// Define the colors for each of the three vertices of the triangle
 	const float colors[] = {
 		//  R     G		B
-		1.0f, 1.0f, 1.0f,		// White
-		1.0f, 1.0f, 1.0f,		// White
-		1.0f, 1.0f, 1.0f		// White
+		1.0f, 0.0f, 0.0f,		// White
+		0.0f, 1.0f, 0.0f,		// White
+		0.0f, 0.0f, 1.0f		// White
 	};
 	// Create a handle for the vertex color buffer
 	GLuint colorBuffer; 
@@ -225,7 +236,7 @@ int main(int argc, char *argv[])
 		// TASK 2: Uncomment the call to gui below to show the GUI
 		///////////////////////////////////////////////////////////////////////////
 		// Then render overlay GUI.
-		// gui();
+		gui();
 
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);			
