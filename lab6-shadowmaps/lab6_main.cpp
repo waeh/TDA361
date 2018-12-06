@@ -155,7 +155,7 @@ void drawBackground(const mat4 &viewMatrix, const mat4 &projectionMatrix)
 	labhelper::drawFullScreenQuad();
 }
 
-void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjectionMatrix)
+void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjMatrix)
 {
 	glUseProgram(currentShaderProgram);
 	// Light source
@@ -165,6 +165,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightPosition", vec3(viewSpaceLightPosition));
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
+	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
 
 
 	// Environment
@@ -189,11 +190,10 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::render(fighterModel);
 
 	//Shadow map
-	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightProjMatrix * lightViewMatrix * inverse(viewMatrix));
-
+	
 	//Spot light
-	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", vec3(0.0f, -1.0f, -1.0f));
+	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", mat3(viewMatrix)*vec3(-1.0f, -1.0f, -1.0f));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", 0.5f);
 }
 
@@ -208,7 +208,6 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	mat4 projMatrix = perspective(radians(45.0f), float(w) / float(h), 5.0f, 500.0f);
 	mat4 viewMatrix = lookAt(cameraPosition, cameraPosition + cameraDirection, worldUp);
-
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
 	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
@@ -223,9 +222,6 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, irradianceMap);
 	glActiveTexture(GL_TEXTURE8);
 	glBindTexture(GL_TEXTURE_2D, reflectionMap);
-	glActiveTexture(GL_TEXTURE10);
-	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
-	glActiveTexture(GL_TEXTURE0);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Set up shadow map parameters
@@ -234,6 +230,9 @@ void display(void)
 	if (shadowMapFB.width != shadowMapResolution || shadowMapFB.height != shadowMapResolution) {
 		shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
 	}
+
+	glActiveTexture(GL_TEXTURE10);
+	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
 
 	if (shadowMapClampMode == ClampMode::Edge) {
 		glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);

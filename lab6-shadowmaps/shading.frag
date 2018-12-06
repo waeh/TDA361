@@ -50,6 +50,7 @@ uniform mat4 viewInverse;
 uniform vec3 viewSpaceLightPosition;
 uniform vec3 viewSpaceLightDir;
 uniform float spotOuterAngle;
+uniform float spotInnerAngle;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Output color
@@ -95,10 +96,11 @@ vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 	//          reflected from that instead
 	///////////////////////////////////////////////////////////////////////////
 	vec3 wh = normalize(wi + wo);
-	float F = F(wo, wo);
+	float F = F(wi, wo);
 	float D = (material_shininess + 2) / 2 * PI * pow(dot(n, wh), material_shininess);
 	float G = min(1, min(2 * dot(n, wh)*dot(n, wh) / dot(wo, wh), 2 * dot(n, wh)*dot(n, wi) / dot(wo, wh)));
 	float brdf = F * D * G / 4 * dot(n, wo)*dot(n, wi);
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Task 3 - Make your shader respect the parameters of our material model.
@@ -163,6 +165,18 @@ void main()
 	float attenuation = 1.0;
 	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x;
 	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+	
+	//Task 3.3
+	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
+	float cosAngle = dot(posToLight, -viewSpaceLightDir);
+
+	// Spotlight with hard border:
+	//float spotAttenuation = (cosAngle > spotOuterAngle) ? 1.0 : 0.0;
+
+	//Spotlight with smooth border
+	float spotAttenuation = smoothstep(spotOuterAngle, spotInnerAngle, cosAngle);
+	visibility *= spotAttenuation;
+	//---------
 
 	vec3 wo = -normalize(viewSpacePosition);
 	vec3 n = normalize(viewSpaceNormal);
@@ -179,15 +193,10 @@ void main()
 	vec3 emission_term = material_emission * material_color;
 	if (has_emission_texture == 1) {
 		emission_term = texture(emissiveMap, texCoord).xyz;
-
-	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
-	float cosAngle = dot(posToLight, -viewSpaceLightDir);
-
-	// Spotlight with hard border:
-	float spotAttenuation = (cosAngle > spotOuterAngle) ? 1.0 : 0.0;
-	visibility *= spotAttenuation;
-
 	}
+
+	
+
 
 	vec3 shading = 
 		direct_illumination_term +
