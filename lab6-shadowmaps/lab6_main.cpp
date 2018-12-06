@@ -130,9 +130,12 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
 
-
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
+
+	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 }
 
 void debugDrawLight(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -155,7 +158,8 @@ void drawBackground(const mat4 &viewMatrix, const mat4 &projectionMatrix)
 	labhelper::drawFullScreenQuad();
 }
 
-void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjMatrix)
+void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, 
+				const mat4 &lightViewMatrix, const mat4 &lightProjMatrix, const mat4 scaleMatrix, const mat4 transMatrix)
 {
 	glUseProgram(currentShaderProgram);
 	// Light source
@@ -190,8 +194,9 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::render(fighterModel);
 
 	//Shadow map
-	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightProjMatrix * lightViewMatrix * inverse(viewMatrix));
-	
+	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", transMatrix * scaleMatrix * lightProjMatrix * lightViewMatrix * inverse(viewMatrix));
+	//labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightProjMatrix * lightViewMatrix * inverse(viewMatrix));
+
 	//Spot light
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", mat3(viewMatrix)*vec3(-1.0f, -1.0f, -1.0f));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", 0.5f);
@@ -212,6 +217,9 @@ void display(void)
 	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
+	mat4 scaleMatrix = scale(mat4(1.0f), vec3(0.5f, 0.5f, 0.5f));
+	mat4 transMatrix = translate(mat4(1.0f), vec3(0.5f, 0.5f, 0.5f));
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
@@ -258,7 +266,7 @@ void display(void)
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glPolygonOffset(polygonOffset_factor, polygonOffset_units);
 
-	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix);
+	drawScene(simpleShaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix, scaleMatrix, transMatrix);
 
 	labhelper::Material &screen = landingpadModel->m_materials[8];
 	screen.m_emission_texture.gl_id = shadowMapFB.colorTextureTarget;
@@ -274,7 +282,7 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	drawBackground(viewMatrix, projMatrix);
-	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix, scaleMatrix, transMatrix);
 	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
 
 	
