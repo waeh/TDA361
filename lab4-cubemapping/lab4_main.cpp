@@ -25,6 +25,7 @@ int windowWidth, windowHeight;
 ///////////////////////////////////////////////////////////////////////////////
 GLuint shaderProgram;
 GLuint backgroundProgram; 
+GLuint ssaoInput;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -58,6 +59,95 @@ labhelper::Model *fighterModel = nullptr;
 labhelper::Model *sphereModel = nullptr;
 
 ///////////////////////////////////////////////////////////////////////////////
+// Framebuffers
+///////////////////////////////////////////////////////////////////////////////
+
+struct FboInfo;
+std::vector<FboInfo> fboList;
+
+struct FboInfo {
+	GLuint framebufferId;
+	GLuint colorTextureTarget;
+	GLuint depthBuffer;
+	int width;
+	int height;
+	bool isComplete;
+
+	FboInfo(int w, int h) {
+		isComplete = false;
+		width = w;
+		height = h;
+		// Generate two textures and set filter parameters (no storage allocated yet)
+		glGenTextures(1, &colorTextureTarget);
+		glBindTexture(GL_TEXTURE_2D, colorTextureTarget);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glGenTextures(1, &depthBuffer);
+		glBindTexture(GL_TEXTURE_2D, depthBuffer);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// allocate storage for textures
+		resize(width, height);
+
+		///////////////////////////////////////////////////////////////////////
+		// Generate and bind framebuffer
+		///////////////////////////////////////////////////////////////////////
+		// >>> @task 1
+		glGenFramebuffers(1, &framebufferId);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferId);
+
+		// bind the texture as color attachment 0 (to the currently bound framebuffer)
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTextureTarget, 0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+		// bind the texture as depth attachment (to the currently bound framebuffer)
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0);
+
+		// check if framebuffer is complete
+		isComplete = checkFramebufferComplete();
+
+		// bind default framebuffer, just in case.
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	// if no resolution provided
+	FboInfo() : isComplete(false)
+		, framebufferId(UINT32_MAX)
+		, colorTextureTarget(UINT32_MAX)
+		, depthBuffer(UINT32_MAX)
+		, width(0)
+		, height(0)
+	{};
+
+	void resize(int w, int h) {
+		width = w;
+		height = h;
+		// Allocate a texture
+		glBindTexture(GL_TEXTURE_2D, colorTextureTarget);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+		// generate a depth texture
+		glBindTexture(GL_TEXTURE_2D, depthBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	}
+
+	bool checkFramebufferComplete(void) {
+		// Check that our FBO is correctly set up, this can fail if we have
+		// incompatible formats in a buffer, or for example if we specify an
+		// invalid drawbuffer, among things.
+		glBindFramebuffer(GL_FRAMEBUFFER, framebufferId);
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
+			labhelper::fatal_error("Framebuffer not complete");
+		}
+
+		return (status == GL_FRAMEBUFFER_COMPLETE);
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // The load shaders function is called once from initialize() and then 
 // whenever you press the Reload Shaders button
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,6 +157,8 @@ void loadShaders(bool is_reload)
 	if (shader != 0) shaderProgram = shader; 
 	shader = labhelper::loadShaderProgram("../lab4-cubemapping/background.vert", "../lab4-cubemapping/background.frag", is_reload);
 	if (shader != 0) backgroundProgram = shader;
+	shader = labhelper::loadShaderProgram("../lab4-cubemapping/ssaoInput.vert", "../lab4-cubemapping/ssaoInput.frag", is_reload);
+	if (shader != 0) ssaoInput = shader;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -159,6 +251,17 @@ void debugDrawLight(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatr
 void display(void)
 {
 	///////////////////////////////////////////////////////////////////////////
+	// Check if any framebuffer needs to be resized
+	///////////////////////////////////////////////////////////////////////////
+	int w, h;
+	SDL_GetWindowSize(g_window, &w, &h);
+
+	for (int i = 0; i < fboList.size(); i++) {
+		if (fboList[i].width != w || fboList[i].height != h)
+			fboList[i].resize(w, h);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
 	// Set up OpenGL stuff
 	///////////////////////////////////////////////////////////////////////////
 	glViewport(0, 0, windowWidth, windowHeight);
@@ -226,7 +329,32 @@ void display(void)
 	// Render the light source
 	debugDrawLight(viewMatrix, projectionMatrix, vec3(lightPosition));
 
-	glUseProgram( 0 );	
+	FboInfo &postFX = fboList[0];
+	glBindFramebuffer(GL_FRAMEBUFFER, postFX.framebufferId);
+
+	glViewport(0, 0, postFX.width, postFX.height);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, postFX.colorTextureTarget);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, w, h);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(ssaoInput);
+	vec3 sample = labhelper::cosineSampleHemisphere();
+	sample *= labhelper::randf();
+	labhelper::setUniformSlow(ssaoInput, "hemisphereSample", sample);
+
+	labhelper::setUniformSlow(ssaoInput, "time", currentTime);
+
+	labhelper::drawFullScreenQuad();
+
+	glUseProgram(0);
+
+	CHECK_GL_ERROR();
 }
 
 bool handleEvents(void)
