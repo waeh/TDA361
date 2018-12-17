@@ -44,6 +44,7 @@ int windowWidth, windowHeight;
 GLuint shaderProgram; // Shader for rendering the final image
 GLuint simpleShaderProgram; // Shader used to draw the shadow map
 GLuint backgroundProgram;
+GLuint ssaoInputProgram;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -84,6 +85,8 @@ mat4 roomModelMatrix;
 mat4 landingPadModelMatrix; 
 mat4 fighterModelMatrix;
 
+
+
 void loadShaders(bool is_reload)
 {
 	GLuint shader = labhelper::loadShaderProgram("../project/simple.vert", "../project/simple.frag", is_reload);
@@ -92,6 +95,8 @@ void loadShaders(bool is_reload)
 	if (shader != 0) backgroundProgram = shader;
 	shader = labhelper::loadShaderProgram("../project/shading.vert", "../project/shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
+	shader = labhelper::loadShaderProgram("../project/ssaoInput.vert", "../project/ssaoInput.frag", is_reload);
+	if (shader != 0) ssaoInputProgram = shader;
 }
 
 void initGL()
@@ -102,6 +107,7 @@ void initGL()
 	backgroundProgram   = labhelper::loadShaderProgram("../project/background.vert", "../project/background.frag");
 	shaderProgram       = labhelper::loadShaderProgram("../project/shading.vert",    "../project/shading.frag");
 	simpleShaderProgram = labhelper::loadShaderProgram("../project/simple.vert",     "../project/simple.frag");
+	ssaoInputProgram = labhelper::loadShaderProgram("../project/ssaoInput.vert", "../project/ssaoInput.frag");
 
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices
@@ -131,15 +137,16 @@ void initGL()
 	glEnable(GL_CULL_FACE);		// enables backface culling
 
 
+
 }
 
-void debugDrawLight(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
+void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
 {
 	mat4 modelMatrix = glm::translate(worldSpaceLightPos);
-	glUseProgram(shaderProgram);
-	labhelper::setUniformSlow(shaderProgram, "modelViewProjectionMatrix", projectionMatrix * viewMatrix * modelMatrix);
+	glUseProgram(currentShaderProgram);
+	labhelper::setUniformSlow(currentShaderProgram, "modelViewProjectionMatrix", projectionMatrix * viewMatrix * modelMatrix);
 	labhelper::render(sphereModel);
-	labhelper::setUniformSlow(shaderProgram, "modelViewProjectionMatrix", projectionMatrix * viewMatrix);
+	labhelper::setUniformSlow(currentShaderProgram, "modelViewProjectionMatrix", projectionMatrix * viewMatrix);
 	labhelper::debugDrawLine(viewMatrix, projectionMatrix, worldSpaceLightPos);
 }
 
@@ -233,11 +240,9 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawBackground(viewMatrix, projMatrix);
-	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
-	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
-
-
-
+	//drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
 }
 
 bool handleEvents(void)
