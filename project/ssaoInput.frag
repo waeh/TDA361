@@ -33,11 +33,6 @@ uniform vec3 point_light_color = vec3(1.0, 1.0, 1.0);
 uniform float point_light_intensity_multiplier = 50.0;
 
 ///////////////////////////////////////////////////////////////////////////////
-// Constants
-///////////////////////////////////////////////////////////////////////////////
-#define PI 3.14159265359
-
-///////////////////////////////////////////////////////////////////////////////
 // Input varyings from vertex shader
 ///////////////////////////////////////////////////////////////////////////////
 in vec2 texCoord;
@@ -55,47 +50,7 @@ uniform vec3 viewSpaceLightPosition;
 ///////////////////////////////////////////////////////////////////////////////
 layout(location = 0) out vec4 fragmentColor;
 
-
-
-vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
-{
-	return vec3(material_color);
-}
-
-vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
-{
-	return vec3(0.0);
-}
-
 void main() 
 {
-	float visibility = 1.0;
-	float attenuation = 1.0;
-
-	vec3 wo = -normalize(viewSpacePosition);
-	vec3 n = normalize(viewSpaceNormal);
-
-	// Direct illumination
-	vec3 direct_illumination_term = visibility * calculateDirectIllumiunation(wo, n);
-
-	// Indirect illumination
-	vec3 indirect_illumination_term = calculateIndirectIllumination(wo, n);
-
-	///////////////////////////////////////////////////////////////////////////
-	// Add emissive term. If emissive texture exists, sample this term.
-	///////////////////////////////////////////////////////////////////////////
-	vec3 emission_term = material_emission * material_color;
-	if (has_emission_texture == 1) {
-		emission_term = texture(emissiveMap, texCoord).xyz;
-	}
-
-	vec3 shading = 
-		direct_illumination_term +
-		indirect_illumination_term +
-		emission_term;
-
-	fragmentColor = vec4(viewSpaceNormal, 1.0);
-	return;
-
+	fragmentColor = vec4(viewSpaceNormal, viewSpacePosition.z);
 }
-#version 420
