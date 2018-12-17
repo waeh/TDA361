@@ -138,6 +138,8 @@ void initGL()
 
 
 
+
+
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
