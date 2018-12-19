@@ -19,6 +19,15 @@ layout(binding = 8) uniform sampler2D reflectionMap;
 uniform float environment_multiplier;
 
 ///////////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
+=======
+// Light source
+///////////////////////////////////////////////////////////////////////////////
+uniform vec3 point_light_color = vec3(1.0, 1.0, 1.0);
+uniform float point_light_intensity_multiplier = 50.0;
+
+///////////////////////////////////////////////////////////////////////////////
+>>>>>>> 01100845146295780851ca328a9c128e7476a3d9
 // Input varyings from vertex shader
 ///////////////////////////////////////////////////////////////////////////////
 in vec2 texCoord;
@@ -38,7 +47,12 @@ layout(location = 0) out vec4 fragmentColor;
 
 void main() 
 {
+<<<<<<< HEAD
 	fragmentColor = vec4(viewSpaceNormal, 1.0);
 	return;
 }
 
+=======
+	fragmentColor = vec4(viewSpaceNormal, viewSpacePosition.z);
+}
+>>>>>>> 01100845146295780851ca328a9c128e7476a3d9

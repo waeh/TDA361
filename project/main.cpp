@@ -137,7 +137,14 @@ void initGL()
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
 
+<<<<<<< HEAD
 	fboList[0] = FboInfo(1);
+=======
+
+
+
+
+>>>>>>> 01100845146295780851ca328a9c128e7476a3d9
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
