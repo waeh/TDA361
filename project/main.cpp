@@ -46,6 +46,7 @@ GLuint shaderProgram; // Shader for rendering the final image
 GLuint simpleShaderProgram; // Shader used to draw the shadow map
 GLuint backgroundProgram;
 GLuint ssaoInputProgram;
+GLuint ssaoOutputProgram;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -98,6 +99,8 @@ void loadShaders(bool is_reload)
 	if (shader != 0) shaderProgram = shader;
 	shader = labhelper::loadShaderProgram("../project/ssaoInput.vert", "../project/ssaoInput.frag", is_reload);
 	if (shader != 0) ssaoInputProgram = shader;
+	shader = labhelper::loadShaderProgram("../project/ssaoOutput.vert", "../project/ssaoOutput.frag", is_reload);
+	if (shader != 0) ssaoOutputProgram = shader;
 }
 
 void initGL()
@@ -109,6 +112,7 @@ void initGL()
 	shaderProgram       = labhelper::loadShaderProgram("../project/shading.vert",    "../project/shading.frag");
 	simpleShaderProgram = labhelper::loadShaderProgram("../project/simple.vert",     "../project/simple.frag");
 	ssaoInputProgram = labhelper::loadShaderProgram("../project/ssaoInput.vert", "../project/ssaoInput.frag");
+	ssaoOutputProgram = labhelper::loadShaderProgram("../project/ssaoOutput.vert", "../project/ssaoOutput.frag");
 
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices
@@ -137,7 +141,21 @@ void initGL()
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
 
-	fboList[0] = FboInfo(1);
+	//Create framebuffers for first and second pre-processing pass
+	fboList.push_back(FboInfo(1));
+	fboList.push_back(FboInfo(1));
+
+	//construct a sample hemisphere
+	vec3 uds[5];
+	for (int i = 0; i < 5; i++)
+	{
+		uds[i] = labhelper::cosineSampleHemisphere();
+		uds[i] *= labhelper::randf();
+	}
+
+	glUseProgram(ssaoOutputProgram);
+	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 5, &uds[0]);
+	
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -198,19 +216,22 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Check if window size has changed and resize buffers as needed
 	///////////////////////////////////////////////////////////////////////////
-	{
-		int w, h;
-		SDL_GetWindowSize(g_window, &w, &h);
-		if (w != windowWidth || h != windowHeight) {
-			windowWidth = w;
-			windowHeight = h;
+	int w, h;
+	SDL_GetWindowSize(g_window, &w, &h);
+	if (w != windowWidth || h != windowHeight) {
+		windowWidth = w;
+		windowHeight = h;
+		for (FboInfo &var : fboList)
+		{
+			var.resize(w, h);
 		}
 	}
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
-	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
+	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 500.0f);
 	mat4 viewMatrix = lookAt(cameraPosition, cameraPosition + cameraDirection, worldUp);
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
@@ -240,19 +261,64 @@ void display(void)
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//drawBackground(viewMatrix, projMatrix);
-	//drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
-	////drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	////drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	//drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	//debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
 
 	//Draw onto texture for ssaoInput
-
-	FboInfo &ssaoInFB = fboList[1];
+	FboInfo &ssaoInFB = fboList[0];
 	glBindFramebuffer(GL_FRAMEBUFFER, ssaoInFB.framebufferId);
 	glViewport(0, 0, ssaoInFB.width, ssaoInFB.height);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
+
+	
+	//Bind and clear buffer for ssaoOut
+	FboInfo &ssaoOutFB = fboList[1];
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoOutFB.framebufferId);
+	glViewport(0, 0, ssaoOutFB.width, ssaoOutFB.height);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//Attach texture from ssao-in to ssao-out
+	glUseProgram(ssaoOutputProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ssaoInFB.colorTextureTargets[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, ssaoInFB.depthBuffer);
+
+	//Add uniforms for ssao-out
+	labhelper::setUniformSlow(ssaoOutputProgram, "projectionMatrix", projMatrix);
+	labhelper::setUniformSlow(ssaoOutputProgram, "inverseProjectionMatrix", inverse(projMatrix));
+	labhelper::setUniformSlow(ssaoOutputProgram, "kernel_size", 0.25f);
+
+	//Draw call for ssao-out
+	labhelper::drawFullScreenQuad();
+
+	////Render final picture
+	//glUseProgram(shaderProgram);
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, ssaoOutFB.colorTextureTargets[0]);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glViewport(0, 0, w, h);
+	//glClearColor(0.2, 0.2, 0.8, 1.0);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	//debugDrawLight(shaderProgram, viewMatrix, projMatrix, vec3(lightPosition));
+
+	//Testing, print progress to screen
+	glUseProgram(simpleShaderProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ssaoOutFB.colorTextureTargets[0]);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, w, h);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	labhelper::drawFullScreenQuad();
 }
 
 bool handleEvents(void)
