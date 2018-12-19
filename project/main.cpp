@@ -37,6 +37,7 @@ float previousTime = 0.0f;
 float deltaTime    = 0.0f;
 bool showUI = false;
 int windowWidth, windowHeight;
+std::vector<FboInfo> fboList;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -136,8 +137,7 @@ void initGL()
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
 
-
-
+	fboList[0] = FboInfo(1);
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -234,13 +234,23 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera
 	///////////////////////////////////////////////////////////////////////////
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, windowWidth, windowHeight);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glViewport(0, 0, windowWidth, windowHeight);
+	//glClearColor(0.2, 0.2, 0.8, 1.0);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//drawBackground(viewMatrix, projMatrix);
+	//drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	////drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
+	//debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
+
+	//Draw onto texture for ssaoInput
+
+	FboInfo &ssaoInFB = fboList[1];
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoInFB.framebufferId);
+	glViewport(0, 0, ssaoInFB.width, ssaoInFB.height);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	drawBackground(viewMatrix, projMatrix);
-	//drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
 }
