@@ -128,18 +128,18 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 
 }
 
-vec4 textureRect(in sampler2D tex, vec2 rectangleCoord)
-{
-	return texture(tex, rectangleCoord / textureSize(tex, 0));
-}
+//vec4 textureRect(in sampler2D tex, vec2 rectangleCoord)
+//{
+//	return texture(tex, rectangleCoord / textureSize(tex, 0));
+//}
 
 void main() 
 {
 	float visibility = 1.0;
 	float attenuation = 1.0;
 	
-	vec3 ssaoTex = texture(frameBufferTexture, texCoord).xyz;
-	mat3 ssao = mat3(ssaoTex.x);
+	float ssaoTex = texelFetch(frameBufferTexture, ivec2(gl_FragCoord),0).x;
+	mat3 ssao = mat3(ssaoTex);
 
 	vec3 wo = -normalize(viewSpacePosition);
 	vec3 n = normalize(viewSpaceNormal);

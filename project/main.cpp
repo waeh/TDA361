@@ -38,6 +38,7 @@ float deltaTime    = 0.0f;
 bool showUI = false;
 int windowWidth, windowHeight;
 std::vector<FboInfo> fboList;
+GLuint rotateTexture;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -51,7 +52,7 @@ GLuint ssaoOutputProgram;
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
 ///////////////////////////////////////////////////////////////////////////////
-float environment_multiplier = 1.5f;
+float environment_multiplier = 3.0f;
 GLuint environmentMap, irradianceMap, reflectionMap;
 const std::string envmap_base_name = "001";
 
@@ -61,7 +62,7 @@ const std::string envmap_base_name = "001";
 vec3 lightPosition;
 vec3 point_light_color = vec3(1.f, 1.f, 1.f);
 
-float point_light_intensity_multiplier = 10000.0f;
+float point_light_intensity_multiplier = 00000.0f;
 
 
 
@@ -146,16 +147,28 @@ void initGL()
 	fboList.push_back(FboInfo(1));
 
 	//construct a sample hemisphere
-	vec3 uds[5];
-	for (int i = 0; i < 5; i++)
+	vec3 uds[16];
+	for (int i = 0; i < 10; i++)
 	{
 		uds[i] = labhelper::cosineSampleHemisphere();
 		uds[i] *= labhelper::randf();
 	}
 
 	glUseProgram(ssaoOutputProgram);
-	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 5, &uds[0]);
-	
+	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 16, &uds[0]);
+
+	//Construct rotate angles
+	float rotateAngles [64*64];
+	for (int i = 0; i < 64*64; i++) {
+		rotateAngles[i] = labhelper::randf();
+	}
+
+	//Generate texture to rotate samples
+	glGenTextures(1, &rotateTexture);
+	glBindTexture(GL_TEXTURE_2D, rotateTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 64, 64, 0, GL_R32F, GL_FLOAT, rotateAngles);
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -288,11 +301,15 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, ssaoInFB.colorTextureTargets[0]);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, ssaoInFB.depthBuffer);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, rotateTexture);
+
+	
 
 	//Add uniforms for ssao-out
 	labhelper::setUniformSlow(ssaoOutputProgram, "projectionMatrix", projMatrix);
 	labhelper::setUniformSlow(ssaoOutputProgram, "inverseProjectionMatrix", inverse(projMatrix));
-	labhelper::setUniformSlow(ssaoOutputProgram, "kernel_size", 0.25f);
+	labhelper::setUniformSlow(ssaoOutputProgram, "kernel_size", 3.0f);
 
 	//Draw call for ssao-out
 	labhelper::drawFullScreenQuad();

@@ -7,6 +7,7 @@ precision highp float;
 ///////////////////////////////////////////////////////////////////////////////
 layout(binding = 0) uniform sampler2D frameBufferTexture;
 layout(binding = 1) uniform sampler2D depthTexture;
+layout(binding = 2) uniform samples2D rotateTexture;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Input varyings from vertex shader
@@ -16,7 +17,7 @@ in vec2 texCoord;
 ///////////////////////////////////////////////////////////////////////////////
 // Input uniform variables
 ///////////////////////////////////////////////////////////////////////////////
-uniform vec3 uniformlyDistributedSamples[5];
+uniform vec3 uniformlyDistributedSamples[16];
 uniform mat4 projectionMatrix;
 uniform mat4 inverseProjectionMatrix;
 uniform float kernel_size;
@@ -44,9 +45,9 @@ void main()
 {
 	vec4 ssaoInTexture = texture(frameBufferTexture, texCoord);
 
-	float fragmentDepth = texture(depthTexture, texCoord).w;
-	vec3 vs_normal = ssaoInTexture.xyz;
+	float fragmentDepth = texture(depthTexture, texCoord).x;
 
+	vec3 vs_normal = ssaoInTexture.xyz;
 
 	// Normalized Device Coordinates (clip space)
 	vec4 ndc = vec4(texCoord.x * 2.0 - 1.0, texCoord.y * 2.0 - 1.0, fragmentDepth * 2.0 - 1.0, 1.0);
@@ -76,7 +77,7 @@ void main()
 
 
 		// Sample the depth-buffer at a texture coord based on the ndc-coord of the sample
-		float blocker_depth = texture(depthTexture, (sample_coords_ndc.xy*0.5) + 0.5).w;
+		float blocker_depth = texture(depthTexture, (sample_coords_ndc.xy*0.5) + 0.5).x;
 
 		// Find the view-space coord of the blocker
 		vec3 vs_blocker_pos = homogenize(inverseProjectionMatrix *
@@ -84,11 +85,11 @@ void main()
 
 		// Check that the blocker is closer than kernel_size to vs_pos
 		// (otherwise skip this sample)
-		if (length(vs_blocker_pos - vs_pos) < kernel_size) continue;
+		if (length(vs_blocker_pos - vs_pos) > kernel_size && vs_blocker_pos.z >= vs_sample_position.z) continue;
 		
 		// Check if the blocker pos is closer to the camera than our
 		// fragment, otherwise, increase num_visible_samples
-		if (vs_blocker_pos.z > vs_sample_position.z)
+		if (vs_blocker_pos.z < vs_sample_position.z)
 			num_visible_samples++;
 
 		num_valid_samples += 1;
