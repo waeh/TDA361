@@ -39,6 +39,7 @@ bool showUI = false;
 int windowWidth, windowHeight;
 std::vector<FboInfo> fboList;
 GLuint rotateTexture;
+float rotateAngles[64 * 64];
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -158,17 +159,9 @@ void initGL()
 	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 16, &uds[0]);
 
 	//Construct rotate angles
-	float rotateAngles [64*64];
 	for (int i = 0; i < 64*64; i++) {
 		rotateAngles[i] = labhelper::randf();
 	}
-
-	//Generate texture to rotate samples
-	glGenTextures(1, &rotateTexture);
-	glBindTexture(GL_TEXTURE_2D, rotateTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 64, 64, 0, GL_R32F, GL_FLOAT, rotateAngles);
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -295,6 +288,13 @@ void display(void)
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//Generate texture to rotate samples
+	glGenTextures(1, &rotateTexture);
+	glBindTexture(GL_TEXTURE_2D, rotateTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 64, 64, 0, GL_RGB, GL_FLOAT, rotateAngles);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	
 	//Attach texture from ssao-in to ssao-out
 	glUseProgram(ssaoOutputProgram);
 	glActiveTexture(GL_TEXTURE0);

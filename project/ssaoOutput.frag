@@ -7,7 +7,7 @@ precision highp float;
 ///////////////////////////////////////////////////////////////////////////////
 layout(binding = 0) uniform sampler2D frameBufferTexture;
 layout(binding = 1) uniform sampler2D depthTexture;
-layout(binding = 2) uniform samples2D rotateTexture;
+layout(binding = 2) uniform sampler2D rotateTexture;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Input varyings from vertex shader
@@ -21,6 +21,11 @@ uniform vec3 uniformlyDistributedSamples[16];
 uniform mat4 projectionMatrix;
 uniform mat4 inverseProjectionMatrix;
 uniform float kernel_size;
+
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+#define PI 3.14159265359
 
 ///////////////////////////////////////////////////////////////////////////////
 // Output color
@@ -58,9 +63,16 @@ void main()
 	vec3 vs_tangent = normalize(perpendicular(vs_normal));
 	vec3 vs_bitangent = normalize(cross(vs_normal, vs_tangent));
 
+	float randomPoint = texture(rotateTexture, texCoord).x;
+	float theta = randomPoint * PI * 2;
+	
+	mat3 rotMat(
+				cos(theta), -sin(theta),0,
+				sin(theta), cos(theta),0,
+				0,0,1);
 
 	// Base vectors for the fragment
-	mat3 tbn = mat3(vs_tangent, vs_bitangent, vs_normal); 
+	mat3 tbn = rotmat * mat3(vs_tangent, vs_bitangent, vs_normal); 
 
 	int num_visible_samples = 0;
 	int num_valid_samples = 0;
