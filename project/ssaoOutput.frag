@@ -65,19 +65,25 @@ void main()
 
 	float randomPoint = texture(rotateTexture, texCoord).x;
 	float theta = randomPoint * PI * 2;
-	
-	mat3 rotMat(
-				cos(theta), -sin(theta),0,
-				sin(theta), cos(theta),0,
-				0,0,1);
+	float cosVal = cos(theta);
+	float sinVal = sin(theta);
+
+
+	mat3 rotMat;
+
+	rotMat[0] = vec3(cosVal,sinVal,0.0f);
+	rotMat[1] = vec3(-sinVal, cosVal, 0.0f);
+	rotMat[2] = vec3(0.0f,0.0f,1.0f);
 
 	// Base vectors for the fragment
-	mat3 tbn = rotmat * mat3(vs_tangent, vs_bitangent, vs_normal); 
+	mat3 tbn = mat3(vs_tangent, vs_bitangent, vs_normal); 
+
+	tbn *= rotMat;
 
 	int num_visible_samples = 0;
 	int num_valid_samples = 0;
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 16; i++) {
 		// Project hemishere sample onto the local base
 		vec3 s = tbn * uniformlyDistributedSamples[i];
 
