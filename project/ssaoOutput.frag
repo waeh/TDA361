@@ -51,6 +51,10 @@ void main()
 	vec4 ssaoInTexture = texture(frameBufferTexture, texCoord);
 
 	float fragmentDepth = texture(depthTexture, texCoord).x;
+	if(fragmentDepth == 1.0){
+		fragmentColor.xyz = vec3(0.2);
+		return;
+	}
 
 	vec3 vs_normal = ssaoInTexture.xyz;
 
@@ -63,7 +67,7 @@ void main()
 	vec3 vs_tangent = normalize(perpendicular(vs_normal));
 	vec3 vs_bitangent = normalize(cross(vs_normal, vs_tangent));
 
-	float randomPoint = texture(rotateTexture, texCoord).x;
+	float randomPoint = texelFetch(rotateTexture, ivec2(gl_FragCoord.xy) % ivec2(64, 64), 0).x;
 	float theta = randomPoint * PI * 2;
 	float cosVal = cos(theta);
 	float sinVal = sin(theta);
