@@ -39,6 +39,7 @@ bool showUI = false;
 int windowWidth, windowHeight;
 std::vector<FboInfo> fboList;
 GLuint rotateTexture;
+vec3 uds[16];
 float rotateAngles[64 * 64];
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -148,20 +149,25 @@ void initGL()
 	fboList.push_back(FboInfo(1));
 
 	//construct a sample hemisphere
-	vec3 uds[16];
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		uds[i] = labhelper::cosineSampleHemisphere();
 		uds[i] *= labhelper::randf();
 	}
 
-	glUseProgram(ssaoOutputProgram);
-	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 16, &uds[0]);
-
 	//Construct rotate angles
 	for (int i = 0; i < 64*64; i++) {
 		rotateAngles[i] = labhelper::randf();
 	}
+
+	//Generate texture to rotate samples
+	glGenTextures(1, &rotateTexture);
+	glBindTexture(GL_TEXTURE_2D, rotateTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 64, 64, 0, GL_RED , GL_FLOAT, rotateAngles);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void debugDrawLight(GLuint currentShaderProgram, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, const glm::vec3 &worldSpaceLightPos)
@@ -278,7 +284,7 @@ void display(void)
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawScene(ssaoInputProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
-	debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
+	//debugDrawLight(ssaoInputProgram, viewMatrix, projMatrix, vec3(lightPosition));
 
 	
 	//Bind and clear buffer for ssaoOut
@@ -287,13 +293,6 @@ void display(void)
 	glViewport(0, 0, ssaoOutFB.width, ssaoOutFB.height);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//Generate texture to rotate samples
-	glGenTextures(1, &rotateTexture);
-	glBindTexture(GL_TEXTURE_2D, rotateTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 64, 64, 0, GL_RGB, GL_FLOAT, rotateAngles);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	
 	//Attach texture from ssao-in to ssao-out
 	glUseProgram(ssaoOutputProgram);
@@ -310,6 +309,7 @@ void display(void)
 	labhelper::setUniformSlow(ssaoOutputProgram, "projectionMatrix", projMatrix);
 	labhelper::setUniformSlow(ssaoOutputProgram, "inverseProjectionMatrix", inverse(projMatrix));
 	labhelper::setUniformSlow(ssaoOutputProgram, "kernel_size", 3.0f);
+	labhelper::setUniformSlow(ssaoOutputProgram, "uniformlyDistributedSamples", 16, &uds[0]);
 
 	//Draw call for ssao-out
 	labhelper::drawFullScreenQuad();
